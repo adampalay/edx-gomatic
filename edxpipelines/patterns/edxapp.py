@@ -450,7 +450,7 @@ def generate_migrate_stages(pipeline, config):
 
 
 def generate_deploy_stages(
-        pipeline_name_build, ami_pairs, stage_deploy_pipeline,
+        pipeline_name_build, ami_pairs, stage_deploy_pipeline_artifact,
         base_ami_artifact, head_ami_artifact,
         auto_deploy_ami=False
 ):
@@ -516,7 +516,7 @@ def generate_deploy_stages(
         stages.generate_deployment_messages(
             pipeline=pipeline,
             ami_pairs=ami_pairs,
-            stage_deploy_pipeline=stage_deploy_pipeline,
+            stage_deploy_pipeline_artifact=stage_deploy_pipeline_artifact,
             release_status=constants.ReleaseStatus[config['edx_environment']],
             confluence_user=config['jira_user'],
             confluence_password=config['jira_password'],
@@ -666,7 +666,7 @@ def generate_e2e_test_stage(pipeline, config):
 def rollback_asgs(
         edxapp_deploy_group, pipeline_name,
         deploy_pipeline, config,
-        ami_pairs, stage_deploy_pipeline, base_ami_artifact,
+        ami_pairs, stage_deploy_pipeline_artifact, base_ami_artifact,
         head_ami_artifact,
 ):
     """
@@ -742,7 +742,7 @@ def rollback_asgs(
     stages.generate_deployment_messages(
         pipeline=pipeline,
         ami_pairs=ami_pairs,
-        stage_deploy_pipeline=stage_deploy_pipeline,
+        stage_deploy_pipeline_artifact=stage_deploy_pipeline_artifact,
         base_ami_artifact=base_ami_artifact,
         head_ami_artifact=head_ami_artifact,
         message_tags=[
@@ -766,11 +766,10 @@ def armed_stage_builder(pipeline, config):  # pylint: disable=unused-argument
     return pipeline
 
 
-def rollback_database(edp, build_pipeline, deploy_pipeline):
+def rollback_database(edp, deploy_pipeline):
     """
     Arguments:
         edp (EDP): EDP that this builder will roll back
-        build_pipeline (gomatic.Pipeline): Pipeline source of the launch info (ami-id)
         deploy_pipeline (gomatic.Pipeline): Pipeline source of the migration information
 
     Configuration Required:
@@ -819,14 +818,6 @@ def rollback_database(edp, build_pipeline, deploy_pipeline):
             )
         )
 
-        # We need the build_pipeline upstream so that we can fetch the AMI selection artifact from it
-        pipeline.ensure_material(
-            PipelineMaterial(
-                pipeline_name=build_pipeline.name,
-                stage_name=constants.BUILD_AMI_STAGE_NAME,
-                material_name='select_base_ami',
-            )
-        )
         # Create a a stage for migration rollback.
         for sub_app in EDXAPP_SUBAPPS:
             migration_artifact = utils.ArtifactLocation(
