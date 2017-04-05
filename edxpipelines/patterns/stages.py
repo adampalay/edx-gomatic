@@ -786,7 +786,7 @@ def generate_armed_stage(pipeline, stage_name):
 
 
 def generate_deployment_messages(
-        pipeline, ami_pairs, stage_deploy_pipeline,
+        pipeline, ami_pairs, stage_deploy_pipeline_artifact,
         release_status, confluence_user, confluence_password, github_token,
         base_ami_artifact, head_ami_artifact, message_tags,
         manual_approval=False,
@@ -798,10 +798,6 @@ def generate_deployment_messages(
 
     Args:
         pipeline (gomatic.Pipeline): Pipeline to attach this stage
-        prod_build_pipelines (list of gomatic.Pipeline): The build pipelines that produced the AMIs being deployed
-        stage_deploy_pipeline: The pipeline that deployed to staging
-        org (str): Name of the github organization that holds the repository (e.g. edx)
-        repo (str): Name of repository (e.g edx-platform)
         release_status (ReleaseStatus): the current status of the release
         confluence_user (str): The confluence user to create the release page with
         confluence_password (str): The confluence password to create the release page with
@@ -848,12 +844,7 @@ def generate_deployment_messages(
         parent_title = None
         title = None
         space = None
-        input_artifact = ArtifactLocation(
-            stage_deploy_pipeline.name,
-            message_stage.name,
-            constants.PUBLISH_WIKI_JOB_NAME,
-            constants.RELEASE_WIKI_PAGE_ID_FILENAME,
-        )
+        input_artifact = stage_deploy_pipeline_artifact
 
     tasks.generate_release_wiki_page(
         pipeline,
