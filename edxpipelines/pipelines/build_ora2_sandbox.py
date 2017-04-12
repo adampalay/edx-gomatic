@@ -44,7 +44,7 @@ def install_pipelines(configurator, config):
             'CONFIGURATION_SOURCE_REPO': 'https://github.com/edx/configuration.git',
             'CONFIGURATION_SECURE_VERSION': 'master',
             'CONFIGURATION_INTERNAL_VERSION': 'master',
-            'NOTIFY_ON_FAILURE': 'tnl-dev@edx.org'
+            'NOTIFY_ON_FAILURE': 'educator-dev@edx.org'
         }
     )
 
@@ -128,6 +128,26 @@ def install_pipelines(configurator, config):
         add_course_to_ora2_jenkins_params
     )
 
+    # Create the Enable Auto Auth stage, job, and task
+    jenkins_enable_auto_auth_stage = pipeline.ensure_stage(
+        constants.ENABLE_AUTO_AUTH_STAGE_NAME
+    )
+    jenkins_enable_auto_auth_job = jenkins_enable_auto_auth_stage.ensure_job(
+        constants.ENABLE_AUTO_AUTH_JOB_NAME
+    )
+    tasks.generate_package_install(jenkins_enable_auto_auth_job, 'tubular')
+    # Keys need to be upper case for this job to use them
+    enable_auto_auth_jenkins_params = {
+        'SANDBOX_BASE': '$DNS_NAME'
+    }
+    tasks.trigger_jenkins_build(
+        jenkins_enable_auto_auth_job,
+        constants.ORA2_JENKINS_URL,
+        constants.ORA2_JENKINS_USER_NAME,
+        constants.ENABLE_AUTO_AUTH_JENKINS_JOB_NAME,
+        enable_auto_auth_jenkins_params
+    )
+
     # Create the Ora2 Run Tests stage, job, and task
     jenkins_run_ora2_tests_stage = pipeline.ensure_stage(
         constants.RUN_ORA2_TESTS_STAGE_NAME
@@ -142,12 +162,14 @@ def install_pipelines(configurator, config):
         'BRANCH': '$ORA2_VERSION',
         'SLEEP_TIME': 300
     }
+    jenkins_timeout = 75 * 60
     tasks.trigger_jenkins_build(
         jenkins_run_ora2_tests_job,
         constants.ORA2_JENKINS_URL,
         constants.ORA2_JENKINS_USER_NAME,
         constants.RUN_ORA2_TESTS_JENKINS_JOB_NAME,
-        run_ora2_tests_jenkins_params
+        run_ora2_tests_jenkins_params,
+        timeout=jenkins_timeout
     )
 
 if __name__ == "__main__":
