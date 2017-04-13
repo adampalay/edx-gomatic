@@ -169,4 +169,5 @@ E2E_TESTS = partial(
     ignore_patterns=constants.MATERIAL_IGNORE_ALL_REGEX,
     shallow=True,
     branch='bbeggs/course_import'
+
 )

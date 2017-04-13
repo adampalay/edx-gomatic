@@ -39,7 +39,8 @@ def provision_devstack(pipeline):
 
     # Install vbguest
     build_job.ensure_task(
-        common.bash_task('vagrant plugin install vagrant-vbguest', working_dir=constants.PUBLIC_CONFIGURATION_DEVSTACK_DIR)
+        common.bash_task('vagrant plugin install vagrant-vbguest', working_dir=constants.PUBLIC_CONFIGURATION_DEVSTACK_DIR),
+        common.bash_task("vagrant provision", working_dir=constants.PUBLIC_CONFIGURATION_DIR),
     )
 
     # Bring up the image
