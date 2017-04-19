@@ -64,7 +64,12 @@ def generate_ami_deployment_pipeline(configurator,
     return configurator
 
 
-def generate_single_deployment_service_pipelines(configurator, config, play, app_repo=None, has_migrations=True):
+def generate_single_deployment_service_pipelines(configurator,
+                                                 config,
+                                                 play,
+                                                 app_repo=None,
+                                                 has_migrations=True,
+                                                 application_user=None):
     """
     Generates pipelines used to build and deploy a service to stage, loadtest,
     and prod, for only a single edx deployment.
@@ -107,6 +112,7 @@ def generate_single_deployment_service_pipelines(configurator, config, play, app
         continuous_deployment_edps=[EDP('stage', 'edx', play)],
         manual_deployment_edps=[EDP('prod', 'edx', play)],
         has_migrations=has_migrations,
+        application_user=application_user,
     )
     generate_service_deployment_pipelines(
         group,
@@ -115,10 +121,16 @@ def generate_single_deployment_service_pipelines(configurator, config, play, app
         continuous_deployment_edps=[EDP('loadtest', 'edx', play)],
         configuration_branch='loadtest-{}'.format(play),
         has_migrations=has_migrations,
+        application_user=application_user,
     )
 
 
-def generate_service_pipelines_with_edge(configurator, config, play, app_repo=None, has_migrations=True):
+def generate_service_pipelines_with_edge(configurator,
+                                         config,
+                                         play,
+                                         app_repo=None,
+                                         has_migrations=True,
+                                         application_user=None):
     """
     Generates pipelines used to build and deploy a service to stage-edx, loadtest-edx,
     prod-edx and prod-edx.
@@ -161,6 +173,7 @@ def generate_service_pipelines_with_edge(configurator, config, play, app_repo=No
         continuous_deployment_edps=[EDP('stage', 'edx', play)],
         manual_deployment_edps=[EDP('prod', 'edx', play), EDP('prod', 'edge', play)],
         has_migrations=has_migrations,
+        application_user=application_user,
     )
     generate_service_deployment_pipelines(
         group,
@@ -169,6 +182,7 @@ def generate_service_pipelines_with_edge(configurator, config, play, app_repo=No
         continuous_deployment_edps=[EDP('loadtest', 'edx', play)],
         configuration_branch='loadtest-{}'.format(play),
         has_migrations=has_migrations,
+        application_user=application_user,
     )
 
 
@@ -232,6 +246,7 @@ def generate_service_deployment_pipelines(
         has_migrations=True,
         cd_pipeline_name=None,
         manual_pipeline_name=None,
+        application_user=None,
 ):
     """
     Generates pipelines used to build and deploy a service to multiple environments/deployments.
@@ -257,6 +272,7 @@ def generate_service_deployment_pipelines(
             Defaults to constants.ENVIRONMENT_PIPELINE_NAME_TPL
         manual_pipeline_name (str): The name of the manual deployment pipeline.
             Defaults to constants.ENVIRONMENT_PIPELINE_NAME_TPL
+        application_user (str): Name of the user application user if different from the play name.
     """
     continuous_deployment_edps = tuple(continuous_deployment_edps)
     manual_deployment_edps = tuple(manual_deployment_edps)
@@ -396,7 +412,8 @@ def generate_service_deployment_pipelines(
                 ami_artifact_location,
                 edp,
                 config[edp],
-                has_migrations=has_migrations
+                has_migrations=has_migrations,
+                application_user=application_user,
             )
 
             deployment_artifact_location = ArtifactLocation(

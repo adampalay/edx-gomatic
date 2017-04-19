@@ -107,7 +107,7 @@ def generate_build_ami(stage,
     return job
 
 
-def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migrations=True):
+def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migrations=True, application_user=None):
     """
     Generates a job for deploying an AMI. Migrations are applied as part of this job.
 
@@ -119,6 +119,7 @@ def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migration
             to which the AMI belongs.
         config (dict): Environment-specific secure config.
         has_migrations (bool): Whether to generate Gomatic for applying migrations.
+        application_user (str): application user if different from the play name.
 
     Returns:
         gomatic.gocd.pipelines.Job
@@ -150,9 +151,12 @@ def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migration
             key_pem_path=path_to_artifact(constants.KEY_PEM_FILENAME)
         ))
 
+        if application_user is None:
+            application_user = edp.play
+
         tasks.generate_run_migrations(
             job,
-            application_user=edp.play,
+            application_user=application_user,
             application_name=edp.play,
             application_path='/edx/app/{}'.format(edp.play),
             db_migration_user=constants.DB_MIGRATION_USER,
