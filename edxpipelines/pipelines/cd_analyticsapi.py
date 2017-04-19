@@ -22,7 +22,7 @@ def install_pipelines(configurator, config):
     generate_service_pipelines_with_edge(
         configurator,
         config,
-        'analyticsapi',
+        'analytics_api',
         app_repo='https://github.com/edx/edx-analytics-data-api.git',
     )
 
