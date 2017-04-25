@@ -72,8 +72,7 @@ def install_pipelines(configurator, config):
         'configuration_version': '$CONFIGURATION_VERSION',
         'configuration_source_repo': '$CONFIGURATION_SOURCE_REPO',
         'configuration_secure_version': '$CONFIGURATION_SECURE_VERSION',
-        'configuration_internal_version': '$CONFIGURATION_INTERNAL_VERSION',
-        'basic_auth': 'false'
+        'configuration_internal_version': '$CONFIGURATION_INTERNAL_VERSION'
     }
     jenkins_timeout = 75 * 60
     jenkins_create_ora2_sandbox_job.timeout = str(jenkins_timeout + 60)
@@ -96,8 +95,8 @@ def install_pipelines(configurator, config):
     tasks.generate_package_install(jenkins_set_ora2_version_job, 'tubular')
     # Keys need to be upper case for this job to use them
     set_ora2_version_jenkins_params = {
-        'SANDBOX_HOST': '${DNS_NAME}.sandbox.edx.org',  # uses a different variable name for set version
         'ORA2_VERSION': '$ORA2_VERSION',
+        'SANDBOX_HOST': '${DNS_NAME}.sandbox.edx.org',
         'NOTIFY_ON_FAILURE': '$NOTIFY_ON_FAILURE'
     }
     tasks.trigger_jenkins_build(
@@ -118,7 +117,8 @@ def install_pipelines(configurator, config):
     tasks.generate_package_install(jenkins_add_course_to_ora2_job, 'tubular')
     # Keys need to be upper case for this job to use them
     add_course_to_ora2_jenkins_params = {
-        'SANDBOX_BASE': '$DNS_NAME',
+        'SANDBOX_HOST': '${DNS_NAME}.sandbox.edx.org',
+        'NOTIFY_ON_FAILURE': '$NOTIFY_ON_FAILURE'
     }
     tasks.trigger_jenkins_build(
         jenkins_add_course_to_ora2_job,
@@ -138,7 +138,8 @@ def install_pipelines(configurator, config):
     tasks.generate_package_install(jenkins_enable_auto_auth_job, 'tubular')
     # Keys need to be upper case for this job to use them
     enable_auto_auth_jenkins_params = {
-        'SANDBOX_BASE': '$DNS_NAME'
+        'SANDBOX_HOST': '${DNS_NAME}.sandbox.edx.org',
+        'NOTIFY_ON_FAILURE': '$NOTIFY_ON_FAILURE'
     }
     tasks.trigger_jenkins_build(
         jenkins_enable_auto_auth_job,
@@ -158,9 +159,10 @@ def install_pipelines(configurator, config):
     tasks.generate_package_install(jenkins_run_ora2_tests_job, 'tubular')
     # Keys need to be upper case for this job to use them
     run_ora2_tests_jenkins_params = {
-        'TEST_HOST': '${DNS_NAME}.sandbox.edx.org',
+        'SANDBOX_HOST': '${DNS_NAME}.sandbox.edx.org',
         'BRANCH': '$ORA2_VERSION',
-        'SLEEP_TIME': 300
+        'SLEEP_TIME': 300,
+        'NOTIFY_ON_FAILURE': '$NOTIFY_ON_FAILURE'
     }
     jenkins_timeout = 75 * 60
     tasks.trigger_jenkins_build(
