@@ -157,7 +157,7 @@ def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migration
         tasks.generate_run_migrations(
             job,
             application_user=application_user,
-            application_name=edp.play,
+            application_name=application_user,
             application_path='/edx/app/{}'.format(application_user),
             db_migration_user=constants.DB_MIGRATION_USER,
             db_migration_pass=config['db_migration_pass'],
