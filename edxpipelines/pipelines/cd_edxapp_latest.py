@@ -190,7 +190,6 @@ def install_pipelines(configurator, config):
         stage_builders=[
             edxapp.generate_migrate_stages,
             edxapp.generate_deploy_stages(
-                pipeline_name_build=stage_b.name,
                 ami_pairs=deployed_ami_pairs,
                 stage_deploy_pipeline_artifact=None,
                 base_ami_artifact=utils.ArtifactLocation(
@@ -321,7 +320,6 @@ def install_pipelines(configurator, config):
         [
             edxapp.generate_migrate_stages,
             edxapp.generate_deploy_stages(
-                pipeline_name_build="/".join([prod_edx_b.name, manual_verification.name]),
                 ami_pairs=deployed_ami_pairs_prod,
                 stage_deploy_pipeline_artifact=utils.ArtifactLocation(
                     "/".join([stage_md.name, manual_verification.name]),
@@ -336,7 +334,7 @@ def install_pipelines(configurator, config):
                     constants.BASE_AMI_OVERRIDE_FILENAME,
                 ),
                 head_ami_artifact=utils.ArtifactLocation(
-                    prod_edx_b.name,
+                    "/".join([prod_edx_b.name, stage_md.name, manual_verification.name]),
                     constants.BUILD_AMI_STAGE_NAME,
                     constants.BUILD_AMI_JOB_NAME,
                     constants.BUILD_AMI_FILENAME,
@@ -361,7 +359,6 @@ def install_pipelines(configurator, config):
         [
             edxapp.generate_migrate_stages,
             edxapp.generate_deploy_stages(
-                pipeline_name_build="/".join([prod_edge_b.name, manual_verification.name]),
                 ami_pairs=deployed_ami_pairs_prod,
                 stage_deploy_pipeline_artifact=utils.ArtifactLocation(
                     "/".join([stage_md.name, manual_verification.name]),
@@ -376,7 +373,7 @@ def install_pipelines(configurator, config):
                     constants.BASE_AMI_OVERRIDE_FILENAME,
                 ),
                 head_ami_artifact=utils.ArtifactLocation(
-                    prod_edge_b.name,
+                    "/".join([prod_edge_b.name, stage_md.name, manual_verification.name]),
                     constants.BUILD_AMI_STAGE_NAME,
                     constants.BUILD_AMI_JOB_NAME,
                     constants.BUILD_AMI_FILENAME,

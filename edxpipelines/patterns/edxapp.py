@@ -449,8 +449,7 @@ def generate_migrate_stages(pipeline, config):
     return pipeline
 
 
-def generate_deploy_stages(
-        pipeline_name_build, ami_pairs, stage_deploy_pipeline_artifact,
+def generate_deploy_stages(ami_pairs, stage_deploy_pipeline_artifact,
         base_ami_artifact, head_ami_artifact,
         auto_deploy_ami=False
 ):
@@ -458,7 +457,6 @@ def generate_deploy_stages(
     Create a builder function that adds deployment stages to a pipeline.
 
     Args:
-        pipeline_name_build (str): name of the pipeline that built the AMI
         ami_pairs (list<tuple>): A list of tuples. The first item in the tuple should be Artifact location of the
             base_ami ID that was running before deployment and the ArtifactLocation of the newly deployed AMI ID
             e.g. (ArtifactLocation
@@ -496,19 +494,13 @@ def generate_deploy_stages(
             github_token
             edx_environment
         """
-        built_ami_file_location = utils.ArtifactLocation(
-            pipeline_name_build,
-            constants.BUILD_AMI_STAGE_NAME,
-            constants.BUILD_AMI_JOB_NAME,
-            constants.BUILD_AMI_FILENAME,
-        )
         stages.generate_deploy_ami(
             pipeline,
             config['asgard_api_endpoints'],
             config['asgard_token'],
             config['aws_access_key_id'],
             config['aws_secret_access_key'],
-            built_ami_file_location,
+            head_ami_artifact,
             manual_approval=not auto_deploy_ami
         )
 
