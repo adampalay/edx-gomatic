@@ -109,8 +109,8 @@ def dict_merge(*args):
         return {}
     elif len(args) == 1:
         return args[0]
-    else:
-        return reduce(_deep_dict_merge, args)
+
+    return reduce(_deep_dict_merge, args)
 
 
 def _deep_dict_merge(a, b):

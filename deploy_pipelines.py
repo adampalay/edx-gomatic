@@ -99,28 +99,28 @@ def run_pipelines(environment, config_file, script, verbose, dry_run, save_confi
 
     success = []
     failures = []
-    for script in scripts:
-        script_name = script.pop('script')
+    for deploy_script in scripts:
+        script_name = deploy_script.pop('script')
         try:
             ensure_pipeline(
                 script_name,
                 dry_run=dry_run,
                 save_config_locally=save_config_locally,
-                **script
+                **deploy_script
             )
             success.append(script_name)
         except subprocess.CalledProcessError as exc:
             failures.append({
                 'command': subprocess.list2cmdline(exc.cmd),
                 'script': script_name,
-                'args': script,
+                'args': deploy_script,
                 'error': exc.output.split("\n")
             })
 
-    if len(success) > 0:
+    if success:
         print_success_report(success)
 
-    if len(failures) > 0:
+    if failures:
         print_failure_report(failures)
         exit(1)
 

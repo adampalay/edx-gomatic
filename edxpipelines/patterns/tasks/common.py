@@ -165,7 +165,7 @@ def retrieve_artifact(artifact_location, job, dest=constants.ARTIFACT_PATH, runi
     if artifact_location.is_dir:
         src = FetchArtifactDir(artifact_location.file_name)
     else:
-        src = FetchArtifactFile(artifact_location.file_name)  # pylint: disable=redefined-variable-type
+        src = FetchArtifactFile(artifact_location.file_name)
 
     job.ensure_task(FetchArtifactTask(
         pipeline=artifact_location.pipeline,
