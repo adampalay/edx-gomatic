@@ -657,7 +657,7 @@ def generate_e2e_test_stage(pipeline, config):
 
 def rollback_asgs(
         edxapp_deploy_group, pipeline_name,
-        deploy_pipeline, config,
+        config,
         ami_pairs, stage_deploy_pipeline_artifact, base_ami_artifact,
         head_ami_artifact,
 ):
@@ -665,7 +665,6 @@ def rollback_asgs(
     Arguments:
         edxapp_deploy_group (gomatic.PipelineGroup): The group in which to create this pipeline
         pipeline_name (str): The name of this pipeline
-        deploy_pipeline (gomatic.Pipeline): The pipeline to retrieve the ami_deploy_info.yml artifact from
         config (dict): the configuraiton dictionary
         ami_pairs (list<tuple>): A list of tuples. The first item in the tuple should be Artifact location of the
             base_ami ID that was running before deployment and the ArtifactLocation of the newly deployed AMI ID
@@ -704,13 +703,6 @@ def rollback_asgs(
     ):
         pipeline.ensure_material(material())
 
-    # Specify the artifact that will be fetched containing the previous deployment information.
-    deploy_file_location = utils.ArtifactLocation(
-        deploy_pipeline.name,
-        constants.DEPLOY_AMI_STAGE_NAME,
-        constants.DEPLOY_AMI_JOB_NAME,
-        constants.DEPLOY_AMI_OUT_FILENAME,
-    )
 
     # Create the armed stage as this pipeline needs to auto-execute
     stages.generate_armed_stage(pipeline, constants.ARMED_JOB_NAME)
@@ -724,7 +716,7 @@ def rollback_asgs(
         config['aws_secret_access_key'],
         config['hipchat_token'],
         constants.HIPCHAT_ROOM,
-        deploy_file_location,
+        base_ami_artifact,
     )
     # Since we only want this stage to rollback via manual approval, ensure that it is set on this stage.
     rollback_stage.set_has_manual_approval()
