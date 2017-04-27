@@ -409,38 +409,57 @@ def install_pipelines(configurator, config):
         ):
             pipeline.ensure_material(material())
 
+    rollback_deployed_ami_pairs = [
+        (
+            utils.ArtifactLocation(
+                "/".join([prerelease_materials.name, build_pipeline.name, stage_md.name, manual_verification.name, deploy_pipeline.name]),
+                constants.BASE_AMI_SELECTION_STAGE_NAME,
+                ami_selection_job_name,
+                constants.BASE_AMI_OVERRIDE_FILENAME,
+            ),
+            utils.ArtifactLocation(
+                "/".join([build_pipeline.name, stage_md.name, manual_verification.name, deploy_pipeline.name]),
+                constants.BUILD_AMI_STAGE_NAME,
+                constants.BUILD_AMI_JOB_NAME,
+                constants.BUILD_AMI_FILENAME,
+            )
+        ) for build_pipeline, deploy_pipeline, ami_selection_job_name in [
+            (prod_edx_b, prod_edx_md, constants.BASE_AMI_SELECTION_EDP_JOB_NAME(PROD_EDX_EDXAPP)),
+            (prod_edge_b, prod_edge_md, constants.BASE_AMI_SELECTION_EDP_JOB_NAME(PROD_EDGE_EDXAPP))
+        ]
+    ]
+
     rollback_edx = edxapp.rollback_asgs(
         edxapp_deploy_group=edxapp_deploy_group,
         pipeline_name='PROD_edx_edxapp_Rollback_latest',
-        deploy_pipeline=prod_edx_md,
         config=config[edxapp.PROD_EDX_EDXAPP],
-        ami_pairs=deployed_ami_pairs,
+        ami_pairs=rollback_deployed_ami_pairs,
         stage_deploy_pipeline_artifact=utils.ArtifactLocation(
-                    "/".join([stage_md.name, manual_verification.name, prod_edx_md.name]),
-                    constants.MESSAGE_PR_STAGE_NAME,
-                    constants.PUBLISH_WIKI_JOB_NAME,
-                    constants.RELEASE_WIKI_PAGE_ID_FILENAME,
-                ),
+            "/".join([stage_md.name, manual_verification.name, prod_edx_md.name]),
+            constants.MESSAGE_PR_STAGE_NAME,
+            constants.PUBLISH_WIKI_JOB_NAME,
+            constants.RELEASE_WIKI_PAGE_ID_FILENAME,
+        ),
         base_ami_artifact=utils.ArtifactLocation(
-            prerelease_materials.name,
+            "/".join([prerelease_materials.name, prod_edx_b.name, stage_md.name, manual_verification.name, prod_edx_md.name]),
             constants.BASE_AMI_SELECTION_STAGE_NAME,
             constants.BASE_AMI_SELECTION_EDP_JOB_NAME(PROD_EDX_EDXAPP),
             constants.BASE_AMI_OVERRIDE_FILENAME,
         ),
         head_ami_artifact=utils.ArtifactLocation(
-            prod_edx_b.name,
+            "/".join([prod_edx_b.name, stage_md.name, manual_verification.name, prod_edx_md.name]),
             constants.BUILD_AMI_STAGE_NAME,
             constants.BUILD_AMI_JOB_NAME,
             constants.BUILD_AMI_FILENAME,
         ),
     )
     rollback_edx.set_label_template('${deploy_ami}')
+
     rollback_edge = edxapp.rollback_asgs(
         edxapp_deploy_group=edxapp_deploy_group,
         pipeline_name='PROD_edge_edxapp_Rollback_latest',
-        deploy_pipeline=prod_edge_md,
         config=config[edxapp.PROD_EDGE_EDXAPP],
-        ami_pairs=deployed_ami_pairs,
+        ami_pairs=rollback_deployed_ami_pairs,
         stage_deploy_pipeline_artifact=utils.ArtifactLocation(
             "/".join([stage_md.name, manual_verification.name, prod_edge_md.name]),
             constants.MESSAGE_PR_STAGE_NAME,
@@ -448,13 +467,13 @@ def install_pipelines(configurator, config):
             constants.RELEASE_WIKI_PAGE_ID_FILENAME,
         ),
         base_ami_artifact=utils.ArtifactLocation(
-            prerelease_materials.name,
+            "/".join([prerelease_materials.name, prod_edge_b.name, stage_md.name, manual_verification.name, prod_edge_md.name]),
             constants.BASE_AMI_SELECTION_STAGE_NAME,
             constants.BASE_AMI_SELECTION_EDP_JOB_NAME(PROD_EDGE_EDXAPP),
             constants.BASE_AMI_OVERRIDE_FILENAME,
         ),
         head_ami_artifact=utils.ArtifactLocation(
-            prod_edge_b.name,
+            "/".join([prod_edge_b.name, stage_md.name, manual_verification.name, prod_edge_md.name]),
             constants.BUILD_AMI_STAGE_NAME,
             constants.BUILD_AMI_JOB_NAME,
             constants.BUILD_AMI_FILENAME,
