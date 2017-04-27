@@ -264,7 +264,7 @@ def install_pipelines(configurator, config):
         ],
     )
     rollback_stage_db.ensure_material(PipelineMaterial(stage_md.name, constants.DEPLOY_AMI_STAGE_NAME, constants.APPLY_MIGRATIONS_JOB + "_lms"))
-    rollback_stage_db.set_label_template('${deploy_pipeline}')
+    rollback_stage_db.set_label_template('${stage_ami_deploy}')
 
     manual_verification = edxapp.manual_verification(
         edxapp_deploy_group,
