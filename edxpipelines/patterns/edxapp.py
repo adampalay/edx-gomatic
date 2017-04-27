@@ -750,11 +750,11 @@ def armed_stage_builder(pipeline, config):  # pylint: disable=unused-argument
     return pipeline
 
 
-def rollback_database(edp, deploy_pipeline):
+def rollback_database(edp, sub_app_migration_artifacts):
     """
     Arguments:
         edp (EDP): EDP that this builder will roll back
-        deploy_pipeline (gomatic.Pipeline): Pipeline source of the migration information
+        migration_artifact (dict<str, edxpipelines.utils.ArtifactLocation>): Pipeline source of the migration information
 
     Configuration Required:
         aws_access_key_id
@@ -792,26 +792,8 @@ def rollback_database(edp, deploy_pipeline):
             constants.KEY_PEM_FILENAME
         )
 
-        # Specify the upstream deploy pipeline material for this rollback pipeline.
-        # Assumes there's only a single upstream pipeline material for this pipeline.
-        pipeline.ensure_material(
-            PipelineMaterial(
-                pipeline_name=deploy_pipeline.name,
-                stage_name=constants.DEPLOY_AMI_STAGE_NAME,
-                material_name='deploy_pipeline',
-            )
-        )
-
         # Create a a stage for migration rollback.
-        for sub_app in EDXAPP_SUBAPPS:
-            migration_artifact = utils.ArtifactLocation(
-                deploy_pipeline.name,
-                constants.APPLY_MIGRATIONS_STAGE + "_" + sub_app,
-                constants.APPLY_MIGRATIONS_JOB,
-                constants.MIGRATION_OUTPUT_DIR_NAME,
-                is_dir=True
-            )
-
+        for sub_app, migration_artifact in sub_app_migration_artifacts.items():
             stages.generate_rollback_migrations(
                 pipeline,
                 edp,
