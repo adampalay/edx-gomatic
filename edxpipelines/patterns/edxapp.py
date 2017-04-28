@@ -6,7 +6,7 @@ Gomatic patterns for building the edxapp pipeline.
 
 import sys
 from os import path
-from gomatic import ExecTask, PipelineMaterial, FetchArtifactFile
+from gomatic import ExecTask, FetchArtifactFile
 
 # Used to import edxpipelines files - since the module is not installed.
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
@@ -449,10 +449,11 @@ def generate_migrate_stages(pipeline, config):
     return pipeline
 
 
-def generate_deploy_stages(ami_pairs, stage_deploy_pipeline_artifact,
-        base_ami_artifact, head_ami_artifact,
-        auto_deploy_ami=False
-):
+def generate_deploy_stages(ami_pairs,
+                           stage_deploy_pipeline_artifact,
+                           base_ami_artifact,
+                           head_ami_artifact,
+                           auto_deploy_ami=False):
     """
     Create a builder function that adds deployment stages to a pipeline.
 
@@ -473,7 +474,7 @@ def generate_deploy_stages(ami_pairs, stage_deploy_pipeline_artifact,
                      is_dir=False
                     )
                  )
-        stage_deploy_pipeline (gomatic.Pipeline):
+        stage_deploy_pipeline_artifact (edxpipelines.utils.ArtifactLocation):
         base_ami_artifact (edxpipelines.utils.ArtifactLocation): Location of the Base AMI selection artifact.
         head_ami_artifact (edxpipelines.utils.ArtifactLocation): Location of the Head AMI selection artifact.
         auto_deploy_ami (bool): should this pipeline automatically deploy the AMI
@@ -656,9 +657,12 @@ def generate_e2e_test_stage(pipeline, config):
 
 
 def rollback_asgs(
-        edxapp_deploy_group, pipeline_name,
+        edxapp_deploy_group,
+        pipeline_name,
         config,
-        ami_pairs, stage_deploy_pipeline_artifact, base_ami_artifact,
+        ami_pairs,
+        stage_deploy_pipeline_artifact,
+        base_ami_artifact,
         head_ami_artifact,
 ):
     """
@@ -682,7 +686,7 @@ def rollback_asgs(
                      is_dir=False
                     )
                  )
-        stage_deploy_pipeline (gomatic.Pipeline): The edxapp staging deployment pipeline
+        stage_deploy_pipeline_artifact (edxpipelines.utils.ArtifactLocation): The edxapp staging deployment pipeline
         base_ami_artifact (edxpipelines.utils.ArtifactLocation): ArtifactLocation of the base AMI selection
         head_ami_artifact (edxpipelines.utils.ArtifactLocation): ArtifactLocation of the head AMI selection
 
@@ -702,7 +706,6 @@ def rollback_asgs(
             EDX_MICROSITE, EDX_INTERNAL, EDGE_INTERNAL,
     ):
         pipeline.ensure_material(material())
-
 
     # Create the armed stage as this pipeline needs to auto-execute
     stages.generate_armed_stage(pipeline, constants.ARMED_JOB_NAME)
@@ -754,7 +757,8 @@ def rollback_database(edp, sub_app_migration_artifacts):
     """
     Arguments:
         edp (EDP): EDP that this builder will roll back
-        migration_artifact (dict<str, edxpipelines.utils.ArtifactLocation>): Pipeline source of the migration information
+        sub_app_migration_artifacts (dict<str, edxpipelines.utils.ArtifactLocation>): Pipeline source of the migration
+            information
 
     Configuration Required:
         aws_access_key_id

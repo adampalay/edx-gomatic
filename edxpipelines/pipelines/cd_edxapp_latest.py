@@ -263,7 +263,13 @@ def install_pipelines(configurator, config):
             edxapp.armed_stage_builder,
         ],
     )
-    rollback_stage_db.ensure_material(PipelineMaterial(stage_md.name, constants.DEPLOY_AMI_STAGE_NAME, constants.APPLY_MIGRATIONS_JOB + "_lms"))
+    rollback_stage_db.ensure_material(
+        PipelineMaterial(
+            stage_md.name,
+            constants.APPLY_MIGRATIONS_STAGE + '_lms',
+            'stage_ami_deploy'
+        )
+    )
     rollback_stage_db.set_label_template('${stage_ami_deploy}')
 
     manual_verification = edxapp.manual_verification(
@@ -394,7 +400,7 @@ def install_pipelines(configurator, config):
         config=config[edxapp.PROD_EDGE_EDXAPP],
         pipeline_name="PROD_edge_edxapp_M-D",
         ami_artifact=utils.ArtifactLocation(
-            "/".join([prod_edge_b.name, stage_md.name,  manual_verification.name]),
+            "/".join([prod_edge_b.name, stage_md.name, manual_verification.name]),
             constants.BUILD_AMI_STAGE_NAME,
             constants.BUILD_AMI_JOB_NAME,
             constants.BUILD_AMI_FILENAME,
@@ -418,7 +424,6 @@ def install_pipelines(configurator, config):
                 EDX_MICROSITE, EDX_INTERNAL, EDGE_INTERNAL
         ):
             pipeline.ensure_material(material())
-
 
     rollback_edx_ami_pairs = [
         (
@@ -450,7 +455,8 @@ def install_pipelines(configurator, config):
             constants.RELEASE_WIKI_PAGE_ID_FILENAME,
         ),
         base_ami_artifact=utils.ArtifactLocation(
-            "/".join([prerelease_materials.name, prod_edx_b.name, stage_md.name, manual_verification.name, prod_edx_md.name]),
+            "/".join([prerelease_materials.name,
+                      prod_edx_b.name, stage_md.name, manual_verification.name, prod_edx_md.name]),
             constants.BASE_AMI_SELECTION_STAGE_NAME,
             constants.BASE_AMI_SELECTION_EDP_JOB_NAME(PROD_EDX_EDXAPP),
             constants.BASE_AMI_OVERRIDE_FILENAME,
@@ -467,8 +473,15 @@ def install_pipelines(configurator, config):
     rollback_edge_ami_pairs = [
         (
             utils.ArtifactLocation(
-                "/".join([prerelease_materials.name, prod_edge_b.name, stage_md.name, manual_verification.name,
-                          prod_edge_md.name]),
+                "/".join(
+                    [
+                        prerelease_materials.name,
+                        prod_edge_b.name,
+                        stage_md.name,
+                        manual_verification.name,
+                        prod_edge_md.name
+                    ]
+                ),
                 constants.BASE_AMI_SELECTION_STAGE_NAME,
                 ami_selection_job_name,
                 constants.BASE_AMI_OVERRIDE_FILENAME,
@@ -494,7 +507,15 @@ def install_pipelines(configurator, config):
             constants.RELEASE_WIKI_PAGE_ID_FILENAME,
         ),
         base_ami_artifact=utils.ArtifactLocation(
-            "/".join([prerelease_materials.name, prod_edge_b.name, stage_md.name, manual_verification.name, prod_edge_md.name]),
+            "/".join(
+                [
+                    prerelease_materials.name,
+                    prod_edge_b.name,
+                    stage_md.name,
+                    manual_verification.name,
+                    prod_edge_md.name
+                ]
+            ),
             constants.BASE_AMI_SELECTION_STAGE_NAME,
             constants.BASE_AMI_SELECTION_EDP_JOB_NAME(PROD_EDGE_EDXAPP),
             constants.BASE_AMI_OVERRIDE_FILENAME,
