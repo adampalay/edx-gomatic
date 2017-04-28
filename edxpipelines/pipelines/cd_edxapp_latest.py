@@ -425,7 +425,7 @@ def install_pipelines(configurator, config):
         ):
             pipeline.ensure_material(material())
 
-    rollback_edx_ami_pairs = [
+    rollback_edx_ami_pair = [
         (
             utils.ArtifactLocation(
                 "/".join([prerelease_materials.name, prod_edx_b.name, stage_md.name, manual_verification.name,
@@ -447,7 +447,7 @@ def install_pipelines(configurator, config):
         edxapp_deploy_group=edxapp_deploy_group,
         pipeline_name='PROD_edx_edxapp_Rollback_latest',
         config=config[edxapp.PROD_EDX_EDXAPP],
-        ami_pairs=rollback_edx_ami_pairs,
+        ami_pairs=rollback_edx_ami_pair,
         stage_deploy_pipeline_artifact=utils.ArtifactLocation(
             "/".join([stage_md.name, manual_verification.name, prod_edx_md.name]),
             constants.MESSAGE_PR_STAGE_NAME,
@@ -470,7 +470,7 @@ def install_pipelines(configurator, config):
     )
     rollback_edx.set_label_template('${deploy_ami}')
 
-    rollback_edge_ami_pairs = [
+    rollback_edge_ami_pair = [
         (
             utils.ArtifactLocation(
                 "/".join(
@@ -499,7 +499,7 @@ def install_pipelines(configurator, config):
         edxapp_deploy_group=edxapp_deploy_group,
         pipeline_name='PROD_edge_edxapp_Rollback_latest',
         config=config[edxapp.PROD_EDGE_EDXAPP],
-        ami_pairs=rollback_edge_ami_pairs,
+        ami_pairs=rollback_edge_ami_pair,
         stage_deploy_pipeline_artifact=utils.ArtifactLocation(
             "/".join([stage_md.name, manual_verification.name, prod_edge_md.name]),
             constants.MESSAGE_PR_STAGE_NAME,
