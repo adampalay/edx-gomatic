@@ -62,6 +62,10 @@ RELEASE_ADVANCER_STAGE_NAME = 'advance_release'
 RELEASE_ADVANCER_JOB_NAME = 'advance_release_job'
 CHECK_CI_STAGE_NAME = 'check_ci'
 CHECK_CI_JOB_NAME = 'check_ci_job'
+PRIV_PUB_CREATE_MERGE_PR_STAGE_NAME = 'create_merge_pr'
+PRIV_PUB_CREATE_MERGE_PR_JOB_NAME = 'create_merge_pr_job'
+PUB_PRIV_POLL_MERGE_STAGE_NAME = 'poll_then_merge'
+PUB_PRIV_POLL_MERGE_JOB_NAME = 'poll_then_merge_job'
 
 # Pipeline group names
 ORA2_PIPELINE_GROUP_NAME = 'ORA2'
@@ -125,6 +129,8 @@ VALUE_STREAM_MAP_FILENAME = 'value_stream_map.yaml'
 RELEASE_WIKI_PAGE_ID_FILENAME = 'release_page_id.yml'
 PRIVATE_RC_FILENAME = 'private_rc.yaml'
 FIND_ADVANCE_PIPELINE_OUT_FILENAME = 'find_advance_pipeline.yml'
+PRIVATE_PUBLIC_PR_FILENAME = 'priv_pub_pr.yml'
+PUBLIC_PRIVATE_PUSH_FILENAME = 'pub_priv_push.yml'
 # SHA and count are used together because SHA may not always be enough to uniquely
 # identify a build.
 DEPLOYMENT_PIPELINE_LABEL_TPL = '${{{.material_name}[:7]}}-${{COUNT}}'.format
