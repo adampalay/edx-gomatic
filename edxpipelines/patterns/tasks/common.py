@@ -366,6 +366,51 @@ def generate_launch_instance(
     ))
 
 
+def generate_ensure_python2(job, runif="passed"):
+    """
+    Generate a task that ensures that python2 is on a newly launched machine so
+    that we can safely run ansible against it.
+
+    Assumes:
+        - The play will be run using the continuous delivery ansible config constants.ANSIBLE_CONTINUOUS_DELIVERY_CONFIG
+        - The play will be run from the constants.PUBLIC_CONFIGURATION_DIR directory
+        - A key file for this host in "{constatst.ARTIFACT_PATH}/key.pem"
+        - An ansible inventory file "{constatst.ARTIFACT_PATH}/ansible_inventory"
+        - A launch info file "{constatst.ARTIFACT_PATH}/launch_info.yml"
+
+
+    Args:
+        job (gomatic.job.Job): the gomatic job on which we should add the task.
+        runif (str): one of ['passed', 'failed', 'any'] Default passed
+    """
+    job.ensure_environment_variables(
+        {
+            'ANSIBLE_CONFIG': constants.ANSIBLE_CONTINUOUS_DELIVERY_CONFIG,
+        }
+    )
+
+    prefix = [
+        'chmod 600 ../{}/key.pem;'.format(constants.ARTIFACT_PATH),
+        'export ANSIBLE_HOST_KEY_CHECKING=False;',
+        'export ANSIBLE_SSH_ARGS="-o ControlMaster=auto -o ControlPersist=30m";',
+        'PRIVATE_KEY=$(/bin/pwd)/../{}/key.pem;'.format(constants.ARTIFACT_PATH),
+    ]
+    extra_options = [
+        '--private-key=$PRIVATE_KEY',
+        '--user=ubuntu',
+        '--module-path=playbooks/library',
+    ]
+
+    return job.add_task(ansible_task(
+        variables=[],
+        playbook='playbooks/edx-east/bootstrap_python.yml',
+        prefix=prefix,
+        extra_options=extra_options,
+        inventory='../{}/ansible_inventory'.format(constants.ARTIFACT_PATH),
+        runif=runif
+    ))
+
+
 def generate_create_ami(
         job, play, deployment, edx_environment,
         app_repo, aws_access_key_id,
