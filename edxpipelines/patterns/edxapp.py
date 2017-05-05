@@ -58,7 +58,6 @@ def private_public_merge_sync(edxapp_group, config):
         edx_platform_private_sr.branch,
         ('edx', 'edx-platform'),
         "master",
-        private_reference_repo='edx-platform-private',
     )
 
     stage = pipeline.ensure_stage(constants.PUB_PRIV_POLL_MERGE_STAGE_NAME)
@@ -95,7 +94,6 @@ def private_public_merge_sync(edxapp_group, config):
         edx_platform_private_sr.branch,
         ('edx', 'edx-platform'),
         "master",
-        public_reference_repo='edx-platform',
     )
 
     return pipeline
