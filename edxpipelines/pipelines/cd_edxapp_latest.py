@@ -547,6 +547,12 @@ def install_pipelines(configurator, config):
             )
         )
 
+    private_public_merge_sync = edxapp.private_public_merge_sync(
+        edxapp_group,
+        config,
+    )
+    private_public_merge_sync.set_label_template('${edx-platform-private[:7]}')
+
 
 if __name__ == "__main__":
     pipeline_script(install_pipelines, environments=('stage-edx', 'prod-edx', 'prod-edge'))

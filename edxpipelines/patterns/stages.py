@@ -15,7 +15,7 @@ Responsibilities:
         * ``ensure`` the scm materials needed for any non-pattern task to function.
 """
 
-from gomatic import ExecTask, BuildArtifact, FetchArtifactTask, FetchArtifactFile
+from gomatic import ExecTask, BuildArtifact, FetchArtifactTask
 
 from edxpipelines import constants
 from edxpipelines.patterns import (
@@ -935,7 +935,12 @@ def generate_create_branch_and_pr(pipeline,
 
 
 def generate_poll_tests_and_merge_pr(pipeline,
+                                     stage,
+                                     job,
                                      stage_name,
+                                     job_name,
+                                     pr_artifact_params,
+                                     artifact_filename,
                                      org,
                                      repo,
                                      token,
@@ -950,10 +955,17 @@ def generate_poll_tests_and_merge_pr(pipeline,
 
     Args:
         pipeline (gomatic.Pipeline): Pipeline to attach this stage to
+        stage (gomatic.Stage): Stage to use when adding tasks -or- None
+        job (gomatic.Job): Job to use when adding tasks -or- None
         stage_name (str): Name of the stage
+        pr_artifact_params (dict): Params to use in creation of artifact-fetching task.
+        artifact_filename (str): Filename of the artifact to fetch/read-in.
         org (str): Name of the github organization that holds the repository (e.g. edx)
         repo (str): Name of repository (e.g edx-platform)
         token (str): the github token used to create all these things. Will be an env_var 'GIT_TOKEN'
+        initial_poll_wait (int): Number of seconds that will pass between 1st/2nd poll attempts.
+        max_poll_tries (int): Maximum number of poll attempts that should occur before failing.
+        poll_interval (int): Number of seconds between all poll attempts (after the 1st/2nd attempt interval).
         manual_approval (bool): Should this stage require manual approval?
 
     Returns:
@@ -971,29 +983,26 @@ def generate_poll_tests_and_merge_pr(pipeline,
             'GIT_TOKEN': token
         }
     )
-    git_stage = pipeline.ensure_stage(stage_name)
-    if manual_approval:
-        git_stage.set_has_manual_approval()
-    git_job = git_stage.ensure_job(constants.CHECK_PR_TESTS_AND_MERGE_JOB_NAME)
+    if stage is None:
+        git_stage = pipeline.ensure_stage(stage_name)
+        if manual_approval:
+            git_stage.set_has_manual_approval()
+        git_job = git_stage.ensure_job(job_name)
+    else:
+        git_stage = stage
+        git_job = job
     tasks.generate_package_install(git_job, 'tubular')
+    tasks.generate_target_directory(git_job)
 
     # Fetch the PR-creation material.
-    git_job.add_task(
-        FetchArtifactTask(
-            pipeline=pipeline.name,
-            stage=constants.CREATE_MASTER_MERGE_PR_STAGE_NAME,
-            job=constants.CREATE_MASTER_MERGE_PR_JOB_NAME,
-            src=FetchArtifactFile(constants.CREATE_BRANCH_PR_FILENAME),
-            dest=constants.ARTIFACT_PATH
-        )
-    )
+    git_job.add_task(FetchArtifactTask(**pr_artifact_params))
 
     # Generate a task that poll the status of combined tests for a PR.
     tasks.generate_poll_pr_tests(
         git_job,
         org,
         repo,
-        constants.CREATE_BRANCH_PR_FILENAME
+        artifact_filename
     )
 
     # Generate a task that merges a PR that has passed all its tests in the previous task.
@@ -1001,7 +1010,7 @@ def generate_poll_tests_and_merge_pr(pipeline,
         git_job,
         org,
         repo,
-        constants.CREATE_BRANCH_PR_FILENAME
+        artifact_filename
     )
 
     return git_stage

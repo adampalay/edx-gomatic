@@ -6,7 +6,7 @@ Gomatic patterns for building the edxapp pipeline.
 
 import sys
 from os import path
-from gomatic import ExecTask, PipelineMaterial
+from gomatic import ExecTask, PipelineMaterial, FetchArtifactFile
 
 # Used to import edxpipelines files - since the module is not installed.
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
@@ -17,7 +17,7 @@ from edxpipelines.patterns import stages, jobs, tasks
 from edxpipelines.patterns.tasks import private_releases
 from edxpipelines import constants
 from edxpipelines.materials import (
-    TUBULAR, CONFIGURATION, EDX_PLATFORM, EDX_SECURE, EDGE_SECURE,
+    TUBULAR, CONFIGURATION, EDX_PLATFORM, EDX_PLATFORM_PRIVATE, EDX_SECURE, EDGE_SECURE,
     EDX_MICROSITE, EDX_INTERNAL, EDGE_INTERNAL, material_envvar_bash
 )
 
@@ -31,6 +31,75 @@ EDXAPP_SUBAPPS = ['cms', 'lms']
 # That stage is automatically advanced by a separate release-advancing pipeline
 # to trigger a production deployment.
 EDXAPP_MANUAL_PIPELINE_NAME = "manual_verification_edxapp_prod_early_ami_build"
+
+
+def private_public_merge_sync(edxapp_group, config):
+    """
+    Variables needed for this pipeline:
+    - git_token
+    - initial_poll_wait
+    - max_poll_tries
+    - poll_interval
+    """
+    pipeline = edxapp_group.ensure_replacement_of_pipeline('edxapp_private_public_merge_sync')
+
+    edx_platform_private_sr = EDX_PLATFORM_PRIVATE(material_name='edx-platform-private', ignore_patterns=frozenset())
+    pipeline.ensure_material(edx_platform_private_sr)
+    pipeline.ensure_material(EDX_PLATFORM(branch='master'))
+    pipeline.ensure_material(TUBULAR())
+    stage = pipeline.ensure_stage(constants.PRIV_PUB_CREATE_MERGE_PR_STAGE_NAME)
+    job = stage.ensure_job(constants.PRIV_PUB_CREATE_MERGE_PR_JOB_NAME)
+    tasks.generate_package_install(job, 'tubular')
+
+    private_releases.generate_private_public_create_pr(
+        job,
+        config['git_token'],
+        ('edx', 'edx-platform-private'),
+        edx_platform_private_sr.branch,
+        ('edx', 'edx-platform'),
+        "master",
+        private_reference_repo='edx-platform-private',
+    )
+
+    stage = pipeline.ensure_stage(constants.PUB_PRIV_POLL_MERGE_STAGE_NAME)
+    job = stage.ensure_job(constants.PUB_PRIV_POLL_MERGE_JOB_NAME)
+
+    pr_artifact_params = {
+        'pipeline': pipeline.name,
+        'stage': constants.PRIV_PUB_CREATE_MERGE_PR_STAGE_NAME,
+        'job': constants.PRIV_PUB_CREATE_MERGE_PR_JOB_NAME,
+        'src': FetchArtifactFile(constants.PRIVATE_PUBLIC_PR_FILENAME),
+        'dest': constants.ARTIFACT_PATH
+    }
+    stages.generate_poll_tests_and_merge_pr(
+        pipeline=pipeline,
+        stage=stage,
+        job=job,
+        stage_name=None,
+        job_name=None,
+        pr_artifact_params=pr_artifact_params,
+        artifact_filename=constants.PRIVATE_PUBLIC_PR_FILENAME,
+        org='edx',
+        repo='edx-platform',
+        token=config['github_token'],
+        initial_poll_wait=config['initial_poll_wait'],
+        max_poll_tries=config['max_poll_tries'],
+        poll_interval=config['poll_interval'],
+        manual_approval=False
+    )
+
+    # Generate a task that keeps the private branch up-to-date by pushing the public branch to it.
+    private_releases.generate_public_private_merge(
+        job,
+        config['git_token'],
+        ('edx', 'edx-platform-private'),
+        edx_platform_private_sr.branch,
+        ('edx', 'edx-platform'),
+        "master",
+        public_reference_repo='edx-platform',
+    )
+
+    return pipeline
 
 
 def make_release_candidate(edxapp_group, config):
@@ -863,9 +932,21 @@ def merge_back_branches(edxapp_deploy_group, pipeline_name, deploy_artifact, pre
     # Create a single stage in the pipeline which will:
     #   - poll for successful completion of PR tests
     #   - merge the PR
+    pr_artifact_params = {
+        'pipeline': pipeline.name,
+        'stage': constants.CREATE_MASTER_MERGE_PR_STAGE_NAME,
+        'job': constants.CREATE_MASTER_MERGE_PR_JOB_NAME,
+        'src': FetchArtifactFile(constants.CREATE_BRANCH_PR_FILENAME),
+        'dest': constants.ARTIFACT_PATH
+    }
     stages.generate_poll_tests_and_merge_pr(
-        pipeline,
-        constants.CHECK_PR_TESTS_AND_MERGE_STAGE_NAME,
+        pipeline=pipeline,
+        stage=None,
+        job=None,
+        stage_name=constants.CHECK_PR_TESTS_AND_MERGE_STAGE_NAME,
+        job_name=constants.CHECK_PR_TESTS_AND_MERGE_JOB_NAME,
+        pr_artifact_params=pr_artifact_params,
+        artifact_filename=constants.CREATE_BRANCH_PR_FILENAME,
         org=config['github_org'],
         repo=config['github_repo'],
         token=config['github_token'],
