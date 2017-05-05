@@ -112,7 +112,7 @@ EDX_PLATFORM = partial(
 
 EDX_PLATFORM_PRIVATE = partial(
     GitMaterial,
-    url="https://github.com/edx/edx-platform-private",
+    url="git@github.com:edx/edx-platform-private.git",
     branch="security-release",
     polling=True,
     destination_directory="edx-platform-private",

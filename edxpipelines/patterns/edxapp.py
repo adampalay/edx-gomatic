@@ -91,7 +91,6 @@ def private_public_merge_sync(edxapp_group, config):
     # Generate a task that keeps the private branch up-to-date by pushing the public branch to it.
     private_releases.generate_public_private_merge(
         job,
-        config['git_token'],
         ('edx', 'edx-platform-private'),
         edx_platform_private_sr.branch,
         ('edx', 'edx-platform'),
