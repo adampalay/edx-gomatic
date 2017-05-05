@@ -43,9 +43,13 @@ def private_public_merge_sync(edxapp_group, config):
     """
     pipeline = edxapp_group.ensure_replacement_of_pipeline('edxapp_private_public_merge_sync')
 
-    edx_platform_private_sr = EDX_PLATFORM_PRIVATE(material_name='edx-platform-private', ignore_patterns=frozenset())
+    edx_platform_private_sr = EDX_PLATFORM_PRIVATE(
+        material_name='edx-platform-private',
+        destination_directory='edx-platform-priv',
+        ignore_patterns=frozenset()
+    )
     pipeline.ensure_material(edx_platform_private_sr)
-    pipeline.ensure_material(EDX_PLATFORM(branch='master'))
+    pipeline.ensure_material(EDX_PLATFORM(branch='master', destination_directory='edx-plat'))
     pipeline.ensure_material(TUBULAR())
     stage = pipeline.ensure_stage(constants.PRIV_PUB_CREATE_MERGE_PR_STAGE_NAME)
     job = stage.ensure_job(constants.PRIV_PUB_CREATE_MERGE_PR_JOB_NAME)
