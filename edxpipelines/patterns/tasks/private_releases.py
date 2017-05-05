@@ -123,7 +123,7 @@ def generate_private_public_create_pr(
         '--private_source_branch', private_source_branch,
         '--public_org', public_repo[0],
         '--public_repo', public_repo[1],
-        '--public_source_branch', public_target_branch,
+        '--public_target_branch', public_target_branch,
         '--output_file', artifact_path,
     ]
 
@@ -140,7 +140,7 @@ def generate_private_public_create_pr(
 
 
 def generate_public_private_merge(
-        job, git_token, private_repo, private_target_branch,
+        job, private_repo, private_target_branch,
         public_repo, public_source_branch, public_reference_repo=None
 ):
     """
@@ -149,7 +149,6 @@ def generate_public_private_merge(
 
     Arguments:
         job: The gomatic.Job to add this task to
-        git_token: The token to authenticate with github
         private_repo: A tuple of (user, repo) specifying the private repository to
             which the branch push will happen.
         private_target_branch: A branch name. This is the private branch to which the public
@@ -161,13 +160,6 @@ def generate_public_private_merge(
         public_reference_repo: A path to an existing local checkout of the public_repo
             that can be used to speed up fresh clones.
     """
-    # Gomatic forgot to expose ensure_unencrypted_secure_environment_variables,
-    # so we have to reach behind the mangled name to get it ourselves.
-    thing_with_environment_variables = job._Job__thing_with_environment_variables  # pylint: disable=protected-access
-    thing_with_environment_variables.ensure_unencrypted_secure_environment_variables({
-        'GIT_TOKEN': git_token,
-    })
-
     generate_target_directory(job)
 
     artifact_path = '{}/{}'.format(
@@ -176,7 +168,6 @@ def generate_public_private_merge(
     )
 
     args = [
-        '--token', '$GIT_TOKEN',
         '--private_org', private_repo[0],
         '--private_repo', private_repo[1],
         '--private_target_branch', private_target_branch,
