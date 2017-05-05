@@ -374,9 +374,9 @@ def generate_ensure_python2(job, runif="passed"):
     Assumes:
         - The play will be run using the continuous delivery ansible config constants.ANSIBLE_CONTINUOUS_DELIVERY_CONFIG
         - The play will be run from the constants.PUBLIC_CONFIGURATION_DIR directory
-        - A key file for this host in "{constatst.ARTIFACT_PATH}/key.pem"
-        - An ansible inventory file "{constatst.ARTIFACT_PATH}/ansible_inventory"
-        - A launch info file "{constatst.ARTIFACT_PATH}/launch_info.yml"
+        - A key file for this host in "{constants.ARTIFACT_PATH}/key.pem"
+        - An ansible inventory file "{constants.ARTIFACT_PATH}/ansible_inventory"
+        - A launch info file "{constants.ARTIFACT_PATH}/launch_info.yml"
 
 
     Args:
