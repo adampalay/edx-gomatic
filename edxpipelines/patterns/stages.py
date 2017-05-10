@@ -145,6 +145,8 @@ def generate_launch_instance(
         ) if base_ami_id_artifact else None,
     )
 
+    tasks.generate_ensure_python2(job)
+
     return stage
 
 

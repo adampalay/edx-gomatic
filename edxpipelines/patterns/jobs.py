@@ -72,6 +72,8 @@ def generate_build_ami(stage,
         variable_override_path=path_to_artifact(constants.BASE_AMI_OVERRIDE_FILENAME),
     )
 
+    tasks.generate_ensure_python2(job)
+
     # Run the Ansible play for the service.
     tasks.generate_run_app_playbook(
         job,
