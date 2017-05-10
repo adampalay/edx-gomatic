@@ -69,7 +69,8 @@ def generate_single_deployment_service_pipelines(configurator,
                                                  play,
                                                  app_repo=None,
                                                  has_migrations=True,
-                                                 application_user=None):
+                                                 application_user=None,
+                                                 run_e2e_tests_after_deploy=False):
     """
     Generates pipelines used to build and deploy a service to stage, loadtest,
     and prod, for only a single edx deployment.
@@ -113,6 +114,7 @@ def generate_single_deployment_service_pipelines(configurator,
         manual_deployment_edps=[EDP('prod', 'edx', play)],
         has_migrations=has_migrations,
         application_user=application_user,
+        run_e2e_tests_after_deploy=run_e2e_tests_after_deploy,
     )
     generate_service_deployment_pipelines(
         group,
@@ -122,6 +124,7 @@ def generate_single_deployment_service_pipelines(configurator,
         configuration_branch='loadtest-{}'.format(play),
         has_migrations=has_migrations,
         application_user=application_user,
+        run_e2e_tests_after_deploy=False,
     )
 
 
@@ -205,16 +208,21 @@ def generate_service_pipeline_group(configurator, play):
     return pipeline_group
 
 
-DeploymentStages = namedtuple('DeploymentStages', ['deploy', 'rollback_asgs', 'rollback_migrations'])
+DeploymentStages = namedtuple('DeploymentStages', ['deploy', 'rollback_asgs', 'rollback_migrations', 'e2e_tests'])
 
 
-def _generate_deployment_stages(pipeline, has_migrations):
+def _generate_deployment_stages(pipeline, has_migrations, run_e2e_tests_after_deploy=False):
     """
     Create all stages needed for deployment and rollback inside a pipeline.
 
     Returns a DeploymentStages that contains each of those stages.
     """
     deploy = pipeline.ensure_stage(constants.DEPLOY_AMI_STAGE_NAME)
+
+    e2e_tests = None
+
+    if run_e2e_tests_after_deploy:
+        e2e_tests = pipeline.ensure_stage(constants.E2E_TESTS_STAGE_NAME)
 
     # The next stage in the pipeline rolls back the ASG/AMI deployed by the
     # upstream deploy stage.
@@ -233,7 +241,7 @@ def _generate_deployment_stages(pipeline, has_migrations):
     else:
         rollback_migrations = None
 
-    return DeploymentStages(deploy, rollback_asgs, rollback_migrations)
+    return DeploymentStages(deploy, rollback_asgs, rollback_migrations, e2e_tests)
 
 
 def generate_service_deployment_pipelines(
@@ -247,6 +255,7 @@ def generate_service_deployment_pipelines(
         cd_pipeline_name=None,
         manual_pipeline_name=None,
         application_user=None,
+        run_e2e_tests_after_deploy=False,
 ):
     """
     Generates pipelines used to build and deploy a service to multiple environments/deployments.
@@ -273,6 +282,8 @@ def generate_service_deployment_pipelines(
         manual_pipeline_name (str): The name of the manual deployment pipeline.
             Defaults to constants.ENVIRONMENT_PIPELINE_NAME_TPL
         application_user (str): Name of the user application user if different from the play name.
+        run_e2e_tests_after_deploy (bool): Indicates if end-to-end tests should be triggered after
+            deploying a continuous deployment EDP.
     """
     continuous_deployment_edps = tuple(continuous_deployment_edps)
     manual_deployment_edps = tuple(manual_deployment_edps)
@@ -303,7 +314,7 @@ def generate_service_deployment_pipelines(
     cd_pipeline = pipeline_group.ensure_replacement_of_pipeline(cd_pipeline_name)
     cd_pipeline.set_label_template(constants.DEPLOYMENT_PIPELINE_LABEL_TPL(app_material))
     build_stage = cd_pipeline.ensure_stage(constants.BUILD_AMI_STAGE_NAME)
-    cd_deploy_stages = _generate_deployment_stages(cd_pipeline, has_migrations)
+    cd_deploy_stages = _generate_deployment_stages(cd_pipeline, has_migrations, run_e2e_tests_after_deploy)
 
     # Frame out the manual deployment pipeline (and wire it to the continuous deployment pipeline)
     if manual_deployment_edps:
@@ -394,6 +405,16 @@ def generate_service_deployment_pipelines(
             },
             **overrides
         )
+
+    # Create e2e_tests job
+    if run_e2e_tests_after_deploy:
+        for edp in continuous_deployment_edps:
+            stage = cd_deploy_stages.e2e_tests
+            config_edp = config[edp]
+
+            # This conditional allow us to opt-in to running the Jenkins job for each EDP.
+            if config_edp.get('jenkins_job_token') and config_edp.get('jenkins_job_name'):
+                jobs.generate_run_jenkins_job(stage, config_edp)
 
     # Add jobs for deploying all required AMIs
     for (pipeline, deploy_stages, edps) in (

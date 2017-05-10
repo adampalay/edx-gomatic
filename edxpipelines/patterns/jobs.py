@@ -388,3 +388,35 @@ def generate_tag_commit(
         commit_sha_variable=head_sha_variable,
         input_file=head_sha_artifact.file_name if head_sha_artifact else None,
     )
+
+
+def generate_run_jenkins_job(stage, config):
+    """
+    Generates a Job that runs a Jenkins job.
+
+    Args:
+        stage (gomatic.Stage): Stage to which the Job will be added.
+        config (dict): Environment-specific secure config.
+
+    Returns:
+        gomatic.Job
+    """
+    job = stage.ensure_job('run_jenkins_job')
+    # FIXME: Remove once https://github.com/gocd-contrib/gomatic/pull/27 is released.
+    # pylint: disable=protected-access
+    job._Job__thing_with_environment_variables.ensure_unencrypted_secure_environment_variables(
+        {
+            'JENKINS_USER_TOKEN': config['jenkins_user_token'],
+            'JENKINS_JOB_TOKEN': config['jenkins_job_token'],
+        }
+    )
+
+    tasks.generate_package_install(job, 'tubular')
+    tasks.trigger_jenkins_build(
+        job,
+        config['jenkins_url'],
+        config['jenkins_username'],
+        config['jenkins_job_name'],
+    )
+
+    return job

@@ -1398,7 +1398,7 @@ def generate_poll_pr_tests(job,
 
 def trigger_jenkins_build(
         job, jenkins_url, jenkins_user_name, jenkins_job_name,
-        jenkins_params, timeout=30 * 60, custom_error_message=None
+        jenkins_params=None, timeout=30 * 60, custom_error_message=None
 ):
     """
     Generate a GoCD task that triggers a jenkins build and polls for its results.
@@ -1413,10 +1413,11 @@ def trigger_jenkins_build(
         jenkins_url (str): base URL for the jenkins server
         jenkins_user_name (str): username on the jenkins system
         jenkins_job_name (str): name of the jenkins job to trigger
-        jenkins_param (dict): parameter names and values to pass to the job
+        jenkins_params (dict): parameter names and values to pass to the job
         timeout (int): how long to wait for the tests to complete
         custom_error_message (str): Custom error message written to the console on job failure
     """
+    jenkins_params = jenkins_params or {}
     job.timeout = str(timeout + 60)
     command = [
         '--url', jenkins_url,

@@ -18,7 +18,7 @@ def install_pipelines(configurator, config):
     """
     Generates pipelines used to deploy the ecommerce service to stage, loadtest, and prod.
     """
-    generate_single_deployment_service_pipelines(configurator, config, 'ecommerce')
+    generate_single_deployment_service_pipelines(configurator, config, 'ecommerce', run_e2e_tests_after_deploy=True)
 
 
 if __name__ == '__main__':
