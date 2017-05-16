@@ -553,8 +553,6 @@ def install_pipelines(configurator, config):
     )
     rollback_edge.set_label_template('${deploy_ami}')
 
-    # For wiki page updates the rollback pipeline must have
-
     rollback_edx.ensure_material(
         PipelineMaterial(prod_edx_md.name, constants.DEPLOY_AMI_STAGE_NAME, "deploy_ami")
     )

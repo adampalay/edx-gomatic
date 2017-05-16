@@ -798,6 +798,9 @@ def generate_deployment_messages(
 
     Args:
         pipeline (gomatic.Pipeline): Pipeline to attach this stage
+        ami_pairs (tuple): a tuple that consists of the artifact locations for the ami selection and the ami built
+            for all environments.
+        stage_deploy_pipeline_artifact(ArtifactLocation): The artifact location of the stage deploy yaml output.
         release_status (ReleaseStatus): the current status of the release
         confluence_user (str): The confluence user to create the release page with
         confluence_password (str): The confluence password to create the release page with
@@ -951,6 +954,7 @@ def generate_poll_tests_and_merge_pr(pipeline,
         stage (gomatic.Stage): Stage to use when adding tasks -or- None
         job (gomatic.Job): Job to use when adding tasks -or- None
         stage_name (str): Name of the stage
+        job_name (str): Name of the job
         pr_artifact_params (dict): Params to use in creation of artifact-fetching task.
         artifact_filename (str): Filename of the artifact to fetch/read-in.
         org (str): Name of the github organization that holds the repository (e.g. edx)
