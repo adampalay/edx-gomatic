@@ -206,3 +206,19 @@ def path_to_artifact(filename, artifact_path=constants.ARTIFACT_PATH):
         str
     """
     return '{}/{}'.format(artifact_path, filename)
+
+
+def build_artifact_path(pipelines):
+    """
+    Constructs a pipeline path from a list of pipelines.
+
+    Args:
+        pipelines (list): the list of pipelines in reverse order from the pipeline they are being used
+
+        given a pipeline like this
+
+    Returns:
+        str
+
+    """
+    return "/".join(pipelines)
