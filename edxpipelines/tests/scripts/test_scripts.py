@@ -189,7 +189,6 @@ def test_upstream_stages_for_artifacts(script_result, script_name):
         pp.pprint(required_artifacts)
         pp.pprint('Available Artifacts:')
         pp.pprint(available_artifacts)
-        pp.pprint('\n\n\n')
         assert required_artifacts <= available_artifacts, "Stages containing artifacts to be fetched aren't upstream"
 
 

@@ -474,7 +474,7 @@ def generate_deploy_stages(ami_pairs,
                      is_dir=False
                     )
                  )
-        stage_deploy_pipeline_artifact (edxpipelines.utils.ArtifactLocation):
+        stage_deploy_pipeline_artifact (edxpipelines.utils.ArtifactLocation): The stage deploy ArtifactLocation
         base_ami_artifact (edxpipelines.utils.ArtifactLocation): Location of the Base AMI selection artifact.
         head_ami_artifact (edxpipelines.utils.ArtifactLocation): Location of the Head AMI selection artifact.
         auto_deploy_ami (bool): should this pipeline automatically deploy the AMI
@@ -686,7 +686,8 @@ def rollback_asgs(
                      is_dir=False
                     )
                  )
-        stage_deploy_pipeline_artifact (edxpipelines.utils.ArtifactLocation): The edxapp staging deployment pipeline
+        stage_deploy_pipeline_artifact (edxpipelines.utils.ArtifactLocation): The edxapp staging deployment
+            pipeline artifact
         base_ami_artifact (edxpipelines.utils.ArtifactLocation): ArtifactLocation of the base AMI selection
         head_ami_artifact (edxpipelines.utils.ArtifactLocation): ArtifactLocation of the head AMI selection
 
