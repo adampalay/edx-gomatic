@@ -8,10 +8,11 @@ import os.path
 import os
 import re
 
+import pprint
 from enum import Enum
-from edxpipelines.utils import ArtifactLocation
 from edxpipelines.tests.utilities import ContextSet
 import pytest
+
 
 # pylint: disable=invalid-name
 
@@ -55,36 +56,6 @@ def iterate_contexts(script_result, context_type=Context.JOB):
                 elif context_type == Context.JOB:
                     for job in stage.iter('job'):
                         yield GoCDContext(pipeline, stage, job)
-
-
-def test_upstream_artifacts(script_result, script_name):
-    if script_name in KNOWN_FAILING_PIPELINES:
-        pytest.xfail("{} is known to be non-independent".format(script_name))
-
-    required_artifacts = set(
-        ArtifactLocation(
-            pipeline=fetch.get('pipeline'),
-            stage=fetch.get('stage'),
-            job=fetch.get('job'),
-            file_name=fetch.get('srcfile', fetch.get('srcdir')),
-        )
-        for fetch in script_result.iter('fetchartifact')
-    )
-
-    provided_artifacts = set(
-        ArtifactLocation(
-            pipeline=pipeline.get('name'),
-            stage=stage.get('name'),
-            job=job.get('name'),
-            file_name=os.path.basename(artifact.get('src')),
-        )
-        for pipeline in script_result.iter('pipeline')
-        for stage in pipeline.findall('stage')
-        for job in stage.iter('job')
-        for artifact in job.iter('artifact')
-    )
-
-    assert required_artifacts <= provided_artifacts, "Missing upstream artifacts (make sure to 'ensure' them)"
 
 
 def test_upstream_stages(script_result, script_name):
@@ -212,6 +183,12 @@ def test_upstream_stages_for_artifacts(script_result, script_name):
             return ensured_artifacts
 
         available_artifacts = _find_ensured_artifacts(pipeline, set(), [])
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(pipeline.get('name'))
+        pp.pprint('Required Artifacts:')
+        pp.pprint(required_artifacts)
+        pp.pprint('Available Artifacts:')
+        pp.pprint(available_artifacts)
         assert required_artifacts <= available_artifacts, "Stages containing artifacts to be fetched aren't upstream"
 
 

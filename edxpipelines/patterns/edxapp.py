@@ -6,7 +6,7 @@ Gomatic patterns for building the edxapp pipeline.
 
 import sys
 from os import path
-from gomatic import ExecTask, PipelineMaterial, FetchArtifactFile
+from gomatic import ExecTask, FetchArtifactFile
 
 # Used to import edxpipelines files - since the module is not installed.
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
@@ -449,16 +449,15 @@ def generate_migrate_stages(pipeline, config):
     return pipeline
 
 
-def generate_deploy_stages(
-        pipeline_name_build, ami_pairs, stage_deploy_pipeline,
-        base_ami_artifact, head_ami_artifact,
-        auto_deploy_ami=False
-):
+def generate_deploy_stages(ami_pairs,
+                           stage_deploy_pipeline_artifact,
+                           base_ami_artifact,
+                           head_ami_artifact,
+                           auto_deploy_ami=False):
     """
     Create a builder function that adds deployment stages to a pipeline.
 
     Args:
-        pipeline_name_build (str): name of the pipeline that built the AMI
         ami_pairs (list<tuple>): A list of tuples. The first item in the tuple should be Artifact location of the
             base_ami ID that was running before deployment and the ArtifactLocation of the newly deployed AMI ID
             e.g. (ArtifactLocation
@@ -475,7 +474,7 @@ def generate_deploy_stages(
                      is_dir=False
                     )
                  )
-        stage_deploy_pipeline (gomatic.Pipeline):
+        stage_deploy_pipeline_artifact (edxpipelines.utils.ArtifactLocation): The stage deploy ArtifactLocation
         base_ami_artifact (edxpipelines.utils.ArtifactLocation): Location of the Base AMI selection artifact.
         head_ami_artifact (edxpipelines.utils.ArtifactLocation): Location of the Head AMI selection artifact.
         auto_deploy_ami (bool): should this pipeline automatically deploy the AMI
@@ -496,19 +495,13 @@ def generate_deploy_stages(
             github_token
             edx_environment
         """
-        built_ami_file_location = utils.ArtifactLocation(
-            pipeline_name_build,
-            constants.BUILD_AMI_STAGE_NAME,
-            constants.BUILD_AMI_JOB_NAME,
-            constants.BUILD_AMI_FILENAME,
-        )
         stages.generate_deploy_ami(
             pipeline,
             config['asgard_api_endpoints'],
             config['asgard_token'],
             config['aws_access_key_id'],
             config['aws_secret_access_key'],
-            built_ami_file_location,
+            head_ami_artifact,
             manual_approval=not auto_deploy_ami
         )
 
@@ -516,7 +509,7 @@ def generate_deploy_stages(
         stages.generate_deployment_messages(
             pipeline=pipeline,
             ami_pairs=ami_pairs,
-            stage_deploy_pipeline=stage_deploy_pipeline,
+            stage_deploy_pipeline_artifact=stage_deploy_pipeline_artifact,
             release_status=constants.ReleaseStatus[config['edx_environment']],
             confluence_user=config['jira_user'],
             confluence_password=config['jira_password'],
@@ -664,16 +657,18 @@ def generate_e2e_test_stage(pipeline, config):
 
 
 def rollback_asgs(
-        edxapp_deploy_group, pipeline_name,
-        deploy_pipeline, config,
-        ami_pairs, stage_deploy_pipeline, base_ami_artifact,
+        edxapp_deploy_group,
+        pipeline_name,
+        config,
+        ami_pairs,
+        stage_deploy_pipeline_artifact,
+        base_ami_artifact,
         head_ami_artifact,
 ):
     """
     Arguments:
         edxapp_deploy_group (gomatic.PipelineGroup): The group in which to create this pipeline
         pipeline_name (str): The name of this pipeline
-        deploy_pipeline (gomatic.Pipeline): The pipeline to retrieve the ami_deploy_info.yml artifact from
         config (dict): the configuraiton dictionary
         ami_pairs (list<tuple>): A list of tuples. The first item in the tuple should be Artifact location of the
             base_ami ID that was running before deployment and the ArtifactLocation of the newly deployed AMI ID
@@ -691,7 +686,8 @@ def rollback_asgs(
                      is_dir=False
                     )
                  )
-        stage_deploy_pipeline (gomatic.Pipeline): The edxapp staging deployment pipeline
+        stage_deploy_pipeline_artifact (edxpipelines.utils.ArtifactLocation): The edxapp staging deployment
+            pipeline artifact
         base_ami_artifact (edxpipelines.utils.ArtifactLocation): ArtifactLocation of the base AMI selection
         head_ami_artifact (edxpipelines.utils.ArtifactLocation): ArtifactLocation of the head AMI selection
 
@@ -712,14 +708,6 @@ def rollback_asgs(
     ):
         pipeline.ensure_material(material())
 
-    # Specify the artifact that will be fetched containing the previous deployment information.
-    deploy_file_location = utils.ArtifactLocation(
-        deploy_pipeline.name,
-        constants.DEPLOY_AMI_STAGE_NAME,
-        constants.DEPLOY_AMI_JOB_NAME,
-        constants.DEPLOY_AMI_OUT_FILENAME,
-    )
-
     # Create the armed stage as this pipeline needs to auto-execute
     stages.generate_armed_stage(pipeline, constants.ARMED_JOB_NAME)
 
@@ -732,7 +720,7 @@ def rollback_asgs(
         config['aws_secret_access_key'],
         config['hipchat_token'],
         constants.HIPCHAT_ROOM,
-        deploy_file_location,
+        base_ami_artifact,
     )
     # Since we only want this stage to rollback via manual approval, ensure that it is set on this stage.
     rollback_stage.set_has_manual_approval()
@@ -742,7 +730,7 @@ def rollback_asgs(
     stages.generate_deployment_messages(
         pipeline=pipeline,
         ami_pairs=ami_pairs,
-        stage_deploy_pipeline=stage_deploy_pipeline,
+        stage_deploy_pipeline_artifact=stage_deploy_pipeline_artifact,
         base_ami_artifact=base_ami_artifact,
         head_ami_artifact=head_ami_artifact,
         message_tags=[
@@ -766,12 +754,12 @@ def armed_stage_builder(pipeline, config):  # pylint: disable=unused-argument
     return pipeline
 
 
-def rollback_database(edp, build_pipeline, deploy_pipeline):
+def rollback_database(edp, sub_app_migration_artifacts):
     """
     Arguments:
         edp (EDP): EDP that this builder will roll back
-        build_pipeline (gomatic.Pipeline): Pipeline source of the launch info (ami-id)
-        deploy_pipeline (gomatic.Pipeline): Pipeline source of the migration information
+        sub_app_migration_artifacts (dict<str, edxpipelines.utils.ArtifactLocation>): Pipeline source of the migration
+            information
 
     Configuration Required:
         aws_access_key_id
@@ -809,34 +797,8 @@ def rollback_database(edp, build_pipeline, deploy_pipeline):
             constants.KEY_PEM_FILENAME
         )
 
-        # Specify the upstream deploy pipeline material for this rollback pipeline.
-        # Assumes there's only a single upstream pipeline material for this pipeline.
-        pipeline.ensure_material(
-            PipelineMaterial(
-                pipeline_name=deploy_pipeline.name,
-                stage_name=constants.DEPLOY_AMI_STAGE_NAME,
-                material_name='deploy_pipeline',
-            )
-        )
-
-        # We need the build_pipeline upstream so that we can fetch the AMI selection artifact from it
-        pipeline.ensure_material(
-            PipelineMaterial(
-                pipeline_name=build_pipeline.name,
-                stage_name=constants.BUILD_AMI_STAGE_NAME,
-                material_name='select_base_ami',
-            )
-        )
         # Create a a stage for migration rollback.
-        for sub_app in EDXAPP_SUBAPPS:
-            migration_artifact = utils.ArtifactLocation(
-                deploy_pipeline.name,
-                constants.APPLY_MIGRATIONS_STAGE + "_" + sub_app,
-                constants.APPLY_MIGRATIONS_JOB,
-                constants.MIGRATION_OUTPUT_DIR_NAME,
-                is_dir=True
-            )
-
+        for sub_app, migration_artifact in sub_app_migration_artifacts.items():
             stages.generate_rollback_migrations(
                 pipeline,
                 edp,
