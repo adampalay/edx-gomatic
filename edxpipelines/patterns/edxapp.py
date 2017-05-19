@@ -640,6 +640,8 @@ def generate_e2e_test_stage(pipeline, config):
         'edx-e2e-tests',
         {},
         timeout=jenkins_job_timeout,
+        custom_error_message="Need help troubleshooting e2e tests failures? "
+                             "See here: https://openedx.atlassian.net/wiki/display/MBT/What+to+do+when+e2e+tests+fail"
     )
 
     microsites_tests = jenkins_stage.ensure_job('microsites-staging-tests')
