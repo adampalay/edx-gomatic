@@ -499,7 +499,7 @@ def generate_deploy_ami(job, variable_override_path, asgard_api_endpoints, asgar
     job.ensure_environment_variables({
         'ASGARD_API_ENDPOINTS': asgard_api_endpoints,
     })
-    job.ensure_encrypted_environment_variables({
+    job.ensure_unencrypted_secure_environment_variables({
         'ASGARD_API_TOKEN': asgard_token,
     })
 
@@ -742,9 +742,11 @@ def generate_rollback_asg(job,
         'ASGARD_API_ENDPOINTS': asgard_api_endpoints,
     })
     job.ensure_encrypted_environment_variables({
-        'ASGARD_API_TOKEN': asgard_token,
         'AWS_ACCESS_KEY_ID': aws_access_key_id,
         'AWS_SECRET_ACCESS_KEY': aws_secret_access_key,
+    })
+    job.ensure_unencrypted_secure_environment_variables({
+        'ASGARD_API_TOKEN': asgard_token,
     })
 
     rollback_artifact_path = path_to_artifact(constants.ROLLBACK_AMI_OUT_FILENAME)
