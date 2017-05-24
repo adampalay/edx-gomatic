@@ -1,4 +1,4 @@
-git+https://github.com/macdiesel/gomatic.git@edx#egg=gomatic==0.0
+git+https://github.com/macdiesel/gomatic.git@edx#egg=gomatic==0.1
 click>=6.0,<7.0
 pyyaml==3.11
 lxml>=2.0

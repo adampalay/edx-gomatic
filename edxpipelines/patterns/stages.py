@@ -49,9 +49,12 @@ def generate_asg_cleanup(pipeline,
     pipeline.ensure_environment_variables({'ASGARD_API_ENDPOINTS': asgard_api_endpoints})
     pipeline.ensure_encrypted_environment_variables(
         {
-            'ASGARD_API_TOKEN': asgard_token,
             'AWS_ACCESS_KEY_ID': aws_access_key_id,
             'AWS_SECRET_ACCESS_KEY': aws_secret_access_key,
+        }
+    ).ensure_unencrypted_secure_environment_variables(
+        {
+            'ASGARD_API_TOKEN': asgard_token,
         }
     )
 
@@ -367,9 +370,12 @@ def generate_deploy_ami(
         }
     ).ensure_encrypted_environment_variables(
         {
-            'ASGARD_API_TOKEN': asgard_token,
             'AWS_ACCESS_KEY_ID': aws_access_key_id,
             'AWS_SECRET_ACCESS_KEY': aws_secret_access_key,
+        }
+    ).ensure_unencrypted_secure_environment_variables(
+        {
+            'ASGARD_API_TOKEN': asgard_token,
         }
     )
 
@@ -708,13 +714,15 @@ def generate_rollback_asg_stage(
             'ASGARD_API_ENDPOINTS': asgard_api_endpoints,
             'HIPCHAT_ROOM': hipchat_room,
         }
-    )
-    pipeline.ensure_encrypted_environment_variables(
+    ).ensure_encrypted_environment_variables(
         {
-            'ASGARD_API_TOKEN': asgard_token,
             'AWS_ACCESS_KEY_ID': aws_access_key_id,
             'AWS_SECRET_ACCESS_KEY': aws_secret_access_key,
             'HIPCHAT_TOKEN': hipchat_token,
+        }
+    ).ensure_unencrypted_secure_environment_variables(
+        {
+            'ASGARD_API_TOKEN': asgard_token,
         }
     )
 
