@@ -485,6 +485,12 @@ def install_pipelines(configurator, config):
             constants.BUILD_AMI_JOB_NAME,
             constants.BUILD_AMI_FILENAME,
         ),
+        deploy_artifact=utils.ArtifactLocation(
+            utils.build_artifact_path([prod_edx_md.name]),
+            constants.DEPLOY_AMI_STAGE_NAME,
+            constants.DEPLOY_AMI_JOB_NAME,
+            constants.DEPLOY_AMI_OUT_FILENAME,
+        )
     )
     rollback_edx.set_label_template('${deploy_ami}')
 
@@ -550,6 +556,12 @@ def install_pipelines(configurator, config):
             constants.BUILD_AMI_JOB_NAME,
             constants.BUILD_AMI_FILENAME,
         ),
+        deploy_artifact=utils.ArtifactLocation(
+            utils.build_artifact_path([prod_edge_md.name]),
+            constants.DEPLOY_AMI_STAGE_NAME,
+            constants.DEPLOY_AMI_JOB_NAME,
+            constants.DEPLOY_AMI_OUT_FILENAME,
+        )
     )
     rollback_edge.set_label_template('${deploy_ami}')
 
