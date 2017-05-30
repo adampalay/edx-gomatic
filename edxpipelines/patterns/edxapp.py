@@ -666,6 +666,7 @@ def rollback_asgs(
         stage_deploy_pipeline_artifact,
         base_ami_artifact,
         head_ami_artifact,
+        deploy_artifact,
 ):
     """
     Arguments:
@@ -692,6 +693,7 @@ def rollback_asgs(
             pipeline artifact
         base_ami_artifact (edxpipelines.utils.ArtifactLocation): ArtifactLocation of the base AMI selection
         head_ami_artifact (edxpipelines.utils.ArtifactLocation): ArtifactLocation of the head AMI selection
+        deploy_artifact (edxpipelines.utils.ArtifactLocation): ArtifactLocation of the last deployment
 
     Configuration Required:
         tubular_sleep_wait_time
@@ -722,7 +724,7 @@ def rollback_asgs(
         config['aws_secret_access_key'],
         config['hipchat_token'],
         constants.HIPCHAT_ROOM,
-        base_ami_artifact,
+        deploy_artifact,
     )
     # Since we only want this stage to rollback via manual approval, ensure that it is set on this stage.
     rollback_stage.set_has_manual_approval()
