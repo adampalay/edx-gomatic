@@ -471,7 +471,7 @@ def generate_create_ami(
         ('ami_wait', ami_wait),
         ('no_reboot', 'no'),
         ('ami_creation_timeout', str(ami_creation_timeout)),
-        ('extra_name_identifier', 'PIPELINE_COUNTER $GO_PIPELINE_COUNTER -- STAGE_COUNTER $GO_STAGE_COUNTER'),
+        ('extra_name_identifier', '${GO_PIPELINE_COUNTER}--${GO_STAGE_COUNTER}'),
         ('cache_id', cache_id),
     ]
     if version_tags:
