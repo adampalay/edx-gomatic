@@ -264,7 +264,7 @@ def generate_service_deployment_pipelines(
             to after every change in app_material.
         manual_deployment_edps (list of EDP): A list of EDPs that should only be deployed
             to after waiting for manual approval.
-        configuration_branch (str): The branch of the edx/configuration repo to
+        configuration_branch (str): The branch of the edx/configuration and edx/edx-internal repos to
             use when building AMIs and running plays. Defaults to master.
         has_migrations (bool): Whether to generate Gomatic for applying and
             rolling back migrations.
@@ -349,7 +349,7 @@ def generate_service_deployment_pipelines(
         for edp in all_edps
     }
     internal_materials = {
-        edp: materials.deployment_internal(edp.deployment)
+        edp: materials.deployment_internal(edp.deployment, branch=configuration_branch)
         for edp in all_edps
     }
 
