@@ -652,7 +652,7 @@ def generate_e2e_test_stage(pipeline, config):
         jenkins_url,
         jenkins_user_name,
         'microsites-staging-tests', {
-            'CI_BRANCH': 'kashif/white_label',
+            'CI_BRANCH': 'master',
         },
         timeout=jenkins_job_timeout,
     )
