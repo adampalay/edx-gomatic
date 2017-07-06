@@ -109,7 +109,9 @@ def generate_build_ami(stage,
     return job
 
 
-def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migrations=True, application_user=None):
+def generate_deploy_ami(stage, ami_artifact_location, edp, config,
+                        has_migrations=True, application_user=None,
+                        sub_app=None):
     """
     Generates a job for deploying an AMI. Migrations are applied as part of this job.
 
@@ -122,6 +124,7 @@ def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migration
         config (dict): Environment-specific secure config.
         has_migrations (bool): Whether to generate Gomatic for applying migrations.
         application_user (str): application user if different from the play name.
+        sub_app (str): Name of the sub application {cms|lms}
 
     Returns:
         gomatic.gocd.pipelines.Job
@@ -163,6 +166,7 @@ def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migration
             application_path='/edx/app/{}'.format(application_user),
             db_migration_user=constants.DB_MIGRATION_USER,
             db_migration_pass=config['db_migration_pass'],
+            sub_application_name=sub_app,
         )
 
         tasks.generate_ami_cleanup(job, config['hipchat_token'], runif='any')

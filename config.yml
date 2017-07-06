@@ -409,3 +409,10 @@ sandbox:
       - *tools-admin
       - "../gomatic-secure/gocd/vars/sandbox/loadtest-edxapp.yml"
     enabled: False
+
+  # MCKA deployment script
+  - script: edxpipelines/pipelines/cd_edxapp_mcka.py
+    variable_file:
+      - "../gomatic-secure/gocd/vars/sandbox/admin.yml" # required
+    enabled: true
+
