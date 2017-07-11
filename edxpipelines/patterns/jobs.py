@@ -47,7 +47,7 @@ def generate_build_ami(stage,
     Returns:
         gomatic.gocd.pipelines.Job
     """
-    job = stage.ensure_job(constants.BUILD_AMI_JOB_NAME_TPL(edp))
+    job = stage.ensure_job(constants.BUILD_AMI_JOB_NAME_TPL(edp[0]))
 
     tasks.generate_requirements_install(job, 'configuration')
     tasks.generate_package_install(job, 'tubular')
@@ -58,7 +58,7 @@ def generate_build_ami(stage,
         job,
         config['aws_access_key_id'],
         config['aws_secret_access_key'],
-        edp=edp
+        edp=edp[0]
     )
 
     # Launch a new instance on which to build the AMI.
@@ -74,27 +74,55 @@ def generate_build_ami(stage,
 
     tasks.generate_ensure_python2(job)
 
+    param_play = ''
+    param_deployment = ''
+    param_environment = ''
     # Run the Ansible play for the service.
-    tasks.generate_run_app_playbook(
-        job,
-        playbook_path,
-        edp,
-        app_repo_url,
-        private_github_key=config['github_private_key'],
-        hipchat_token=config['hipchat_token'],
-        configuration_secure_dir=configuration_secure_material.destination_directory,
-        configuration_internal_dir=configuration_internal_material.destination_directory,
-        disable_edx_services='true',
-        COMMON_TAG_EC2_INSTANCE='true',
-        **kwargs
-    )
+    if isinstance(edp, list):
+        param_environment = edp[0].environment
+        param_deployment = edp[0].deployment
+        for edp_instanse in edp:
+            param_play += edp_instanse.play
+            tasks.generate_run_app_playbook(
+                job,
+                playbook_path,
+                edp_instanse,
+                app_repo_url,
+                private_github_key=config['github_private_key'],
+                hipchat_token=config['hipchat_token'],
+                configuration_secure_dir=configuration_secure_material
+                    .destination_directory,
+                configuration_internal_dir=configuration_internal_material
+                    .destination_directory,
+                disable_edx_services='true',
+                COMMON_TAG_EC2_INSTANCE='true',
+                **kwargs
+            )
+    else:
+        param_play = edp.play
+        param_deployment = edp.deployment
+        param_environment = edp.environment
+
+        tasks.generate_run_app_playbook(
+            job,
+            playbook_path,
+            edp,
+            app_repo_url,
+            private_github_key=config['github_private_key'],
+            hipchat_token=config['hipchat_token'],
+            configuration_secure_dir=configuration_secure_material.destination_directory,
+            configuration_internal_dir=configuration_internal_material.destination_directory,
+            disable_edx_services='true',
+            COMMON_TAG_EC2_INSTANCE='true',
+            **kwargs
+        )
 
     # Create an AMI from the instance.
     tasks.generate_create_ami(
         job,
-        edp.play,
-        edp.deployment,
-        edp.environment,
+        param_play,
+        param_deployment,
+        param_environment,
         app_repo_url,
         config['aws_access_key_id'],
         config['aws_secret_access_key'],
@@ -111,7 +139,7 @@ def generate_build_ami(stage,
 
 def generate_deploy_ami(stage, ami_artifact_location, edp, config,
                         has_migrations=True, application_user=None,
-                        sub_app=None):
+                        sub_apps=None):
     """
     Generates a job for deploying an AMI. Migrations are applied as part of this job.
 
@@ -124,7 +152,7 @@ def generate_deploy_ami(stage, ami_artifact_location, edp, config,
         config (dict): Environment-specific secure config.
         has_migrations (bool): Whether to generate Gomatic for applying migrations.
         application_user (str): application user if different from the play name.
-        sub_app (str): Name of the sub application {cms|lms}
+        sub_apps (str): Name of the sub application {cms|lms}
 
     Returns:
         gomatic.gocd.pipelines.Job
@@ -159,15 +187,37 @@ def generate_deploy_ami(stage, ami_artifact_location, edp, config,
         if application_user is None:
             application_user = edp.play
 
-        tasks.generate_run_migrations(
-            job,
-            application_user=application_user,
-            application_name=application_user,
-            application_path='/edx/app/{}'.format(application_user),
-            db_migration_user=constants.DB_MIGRATION_USER,
-            db_migration_pass=config['db_migration_pass'],
-            sub_application_name=sub_app,
-        )
+        if sub_apps is not None:
+            if isinstance(sub_apps, list):
+                for sub_app in sub_apps:
+                    tasks.generate_run_migrations(
+                        job,
+                        application_user=application_user,
+                        application_name=application_user,
+                        application_path='/edx/app/{}'.format(application_user),
+                        db_migration_user=constants.DB_MIGRATION_USER,
+                        db_migration_pass=config['db_migration_pass'],
+                        sub_application_name=sub_app,
+                    )
+            else:
+                tasks.generate_run_migrations(
+                    job,
+                    application_user=application_user,
+                    application_name=application_user,
+                    application_path='/edx/app/{}'.format(application_user),
+                    db_migration_user=constants.DB_MIGRATION_USER,
+                    db_migration_pass=config['db_migration_pass'],
+                    sub_application_name=sub_apps,
+                )
+        else:
+            tasks.generate_run_migrations(
+                job,
+                application_user=application_user,
+                application_name=application_user,
+                application_path='/edx/app/{}'.format(application_user),
+                db_migration_user=constants.DB_MIGRATION_USER,
+                db_migration_pass=config['db_migration_pass'],
+            )
 
         tasks.generate_ami_cleanup(job, config['hipchat_token'], runif='any')
 

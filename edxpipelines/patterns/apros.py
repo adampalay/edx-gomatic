@@ -10,21 +10,21 @@ Responsibilities:
             * This allows pipeline pattern composition to be customized by pipeline groups.
         * return the pipeline that was created (or a list/namedtuple, if there were multiple pipelines).
 """
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from functools import partial
 
 from gomatic import GitMaterial, PipelineMaterial
 
 from edxpipelines import constants, materials, utils
-from edxpipelines.materials import material_envvar_bash
+from edxpipelines.materials import material_envvar_bash, EDX_APROS
 from edxpipelines.patterns import jobs, stages
 from edxpipelines.patterns.authz import Permission, ensure_permissions
 from edxpipelines.utils import ArtifactLocation, EDP
 
-STAGE_EDX_EDXAPP = utils.EDP('stage', 'edx', 'edxapp')
-STAGE_EDX_APROS = utils.EDP('stage', 'edx', 'apros')
-PROD_EDX_EDXAPP = utils.EDP('prod', 'edx', 'edxapp')
-PROD_EDX_APROS = utils.EDP('prod', 'edx', 'apros')
+STAGE_MCKA_EDXAPP = utils.EDP('stage', 'mckinsey', 'edxapp')
+STAGE_MCKA_APROS = utils.EDP('stage', 'mckinsey', 'apros')
+PROD_MCKA_EDXAPP = utils.EDP('prod', 'mckinsey', 'edxapp')
+PROD_MCKA_APROS = utils.EDP('prod', 'mckinsey', 'apros')
 MCKA_SUBAPPS = ['cms', 'lms', 'apros']
 
 
@@ -54,22 +54,14 @@ def generate_single_deployment_service_pipelines(configurator,
     """
     group = generate_service_pipeline_group(configurator, play)
 
-    partial_app_material = partial(
-        GitMaterial,
-        app_repo or constants.EDX_REPO_TPL(play),
-        # Material name is required to label pipelines with a commit SHA. GitMaterials
-        # return their SHA when referenced by name.
-        material_name=play,
-        polling=True,
-        destination_directory=play
-    )
+    partial_app_material = materials.EDX_APROS
 
     generate_service_deployment_pipelines(
         group,
         config,
         partial_app_material(),
-        continuous_deployment_edps=[STAGE_EDX_EDXAPP, STAGE_EDX_APROS],
-        manual_deployment_edps=[PROD_EDX_EDXAPP, PROD_EDX_APROS],
+        continuous_deployment_edps=[STAGE_MCKA_APROS, STAGE_MCKA_EDXAPP],
+        manual_deployment_edps=[PROD_MCKA_APROS, PROD_MCKA_EDXAPP],
         has_migrations=has_migrations,
         application_user=application_user,
     )
@@ -167,25 +159,19 @@ def generate_service_deployment_pipelines(
     manual_deployment_edps = tuple(manual_deployment_edps)
 
     all_edps = continuous_deployment_edps + manual_deployment_edps
+    ed_dict = defaultdict(list)
+
+    for edp in all_edps:
+        ed_dict[edp.environment].append(edp)
 
     plays = {edp.play for edp in all_edps}
     if not plays:
         raise ValueError("generate_service_deployment_pipelines needs at least one EDP to deploy")
-    if len(plays) > 1:
-        raise ValueError(
-            "generate_service_deployment_pipelines expects to only deploy "
-            "a single service, but was passed multiple plays: {}".format(plays)
-        )
 
     play = plays.pop()
 
     if cd_pipeline_name is None:
         cd_envs = {edp.environment for edp in continuous_deployment_edps}
-        if len(cd_envs) > 1:
-            raise ValueError(
-                "Only one environment is allowed in continuous_deployment_edps "
-                "if no cd_pipeline_name is specified"
-            )
         cd_pipeline_name = constants.ENVIRONMENT_PIPELINE_NAME_TPL(environment=cd_envs.pop(), play=play)
 
     # Frame out the continuous deployment pipeline
@@ -257,26 +243,27 @@ def generate_service_deployment_pipelines(
         cd_pipeline.ensure_material(material)
 
     # Add jobs to build all required AMIs
-    for edp in all_edps:
+    for ed in ed_dict.keys():
         app_version_var = material_envvar_bash(app_material)
         overrides = {
             'app_version': app_version_var,
             '{}_VERSION'.format(play.upper()): app_version_var,
         }
 
-        secure_material = secure_materials[edp]
-        internal_material = internal_materials[edp]
+        secure_material = secure_materials[(ed_dict[ed])[0]]
+        internal_material = internal_materials[(ed_dict[ed])[0]]
 
         jobs.generate_build_ami(
             build_stage,
-            edp,
+            ed_dict[ed],
             app_material.url,
             secure_material,
             internal_material,
-            constants.PLAYBOOK_PATH_TPL(edp),
-            config[edp],
+            constants.MCKA_PLAYBOOK_PATH,
+            config[(ed_dict[ed])[0]],
             version_tags={
-                edp.play: (app_material.url, app_version_var),
+                (ed_dict[ed])[0].play: (app_material.url, app_version_var),
+                (ed_dict[ed])[1].play: (app_material.url, app_version_var),
                 'configuration': (configuration_material.url, material_envvar_bash(configuration_material)),
                 'configuration_secure': (secure_material.url, material_envvar_bash(secure_material)),
                 'configuration_internal': (internal_material.url, material_envvar_bash(internal_material)),
@@ -305,7 +292,7 @@ def generate_service_deployment_pipelines(
                     config[edp],
                     has_migrations=has_migrations,
                     application_user=application_user,
-                    sub_app=sub_app
+                    sub_apps=sub_app
                 )
 
                 deployment_artifact_location = ArtifactLocation(
@@ -342,6 +329,5 @@ def generate_service_deployment_pipelines(
                         migration_info_location,
                         ami_artifact_location=ami_artifact_location,
                         config=config[edp],
+                        sub_application_name=sub_app
                     )
-
-

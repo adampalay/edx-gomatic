@@ -172,6 +172,8 @@ PROD_TAG_NAME = 'prod_tag_name'
 STAGE_ENV = 'test'
 PROD_ENV = 'prod'
 
+MCKA_PLAYBOOK_PATH = '../mcka-ansible/mckinseyapros.yml'
+
 # key is the steps of the desired pipeline (build/migrate/deploy)
 # value is the suffix used for the pipeline name
 VALID_PIPELINE_STEP_PERMUTATIONS = {

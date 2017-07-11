@@ -77,15 +77,6 @@ def pipeline_script(install_pipelines, environments=(), edps=()):
         config = utils.ConfigMerger(variable_files, env_variable_files, env_deploy_variable_files, cmd_line_vars)
 
         # Create the pipeline
-        # rest_client = HostRestClient(config['gocd_url'])
-        # rest_client.get('')
-        # payload = {
-        #     'j_username': config['gocd_username'],
-        #     'j_password': config['gocd_password']
-        # }
-        # rest_client.post('', payload)
-        # configurator = GoCdConfigurator(rest_client)
-
         configurator = GoCdConfigurator(HostRestClient(
             config['gocd_url'],
             config['gocd_username'],
