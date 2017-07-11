@@ -418,6 +418,60 @@ def generate_deploy_ami(
     return stage
 
 
+def generate_configure_dynamic_scaling(
+        pipeline,
+        aws_access_key_id,
+        aws_secret_access_key,
+        edx_environment,
+        manual_approval=True,
+):
+    """
+    Generates a stage which configures the edxapp ASG to dynamically scale.
+
+    Args:
+        pipeline (gomatic.Pipeline):
+        aws_access_key_id (str):
+        aws_secret_access_key (str):
+        edx_environment (str): The environment which contains the edx-edxapp ASG
+        manual_approval (bool): Should this stage require manual approval?
+    Returns:
+        gomatic.Stage
+    """
+    pipeline.ensure_encrypted_environment_variables(
+        {
+            'AWS_ACCESS_KEY_ID': aws_access_key_id,
+            'AWS_SECRET_ACCESS_KEY': aws_secret_access_key,
+        }
+    )
+
+    stage = pipeline.ensure_stage(constants.CONFIGURE_DYNAMIC_SCALING_STAGE_NAME)
+    if manual_approval:
+        stage.set_has_manual_approval()
+    job = stage.ensure_job(constants.CONFIGURE_DYNAMIC_SCALING_JOB_NAME)
+    tasks.generate_package_install(job, 'tubular')
+    # Add task to generate the directory where the artifact file will be written.
+    tasks.generate_target_directory(job)
+
+    # Setup the deployment output file
+    artifact_path = '{}/{}'.format(
+        constants.ARTIFACT_PATH,
+        constants.CONFIGURE_DYNAMIC_SCALING_OUT_FILENAME,
+    )
+    job.ensure_artifacts(set([BuildArtifact(artifact_path)]))
+
+    # Execute the deployment script
+    cmd_args = [
+        '--out_file', '../{}'.format(artifact_path),
+        '--environment', edx_environment,
+    ]
+    job.add_task(tasks.tubular_task(
+        'configure_dynamic_scaling.py',
+        cmd_args
+    ))
+
+    return stage
+
+
 def generate_run_migrations(pipeline,
                             db_migration_pass,
                             inventory_location,

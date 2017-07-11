@@ -201,6 +201,17 @@ def install_pipelines(configurator, config):
         runif='any'
     )
 
+    #
+    # Create the stage to configure the ASG dynamic scaling.
+    #
+    stages.generate_configure_dynamic_scaling(
+        pipeline,
+        config['aws_access_key_id'],
+        config['aws_secret_access_key'],
+        config['edx_environment'],
+        manual_approval=not config.get('auto_configure_dynamic_scaling', False)
+    )
+
 
 if __name__ == "__main__":
     pipeline_script(install_pipelines)
