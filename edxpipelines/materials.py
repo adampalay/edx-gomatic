@@ -165,7 +165,8 @@ EDX_APROS = partial(
     GitMaterial,
     url='git@github.com:edx-ops/apros',
     polling=True,
-    destination_directory='apros'
+    destination_directory='apros',
+    material_name='apros'
 )
 
 EDX_MCKA_SECURE = partial(
