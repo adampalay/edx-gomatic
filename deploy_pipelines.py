@@ -43,7 +43,7 @@ def print_success_report(success):
     """
     Print out successful script runs.
     """
-    print "Succesfully run scripts:"
+    print "Successfully ran scripts:"
     for item in success:
         logging.info(pprint.pformat(item))
 
