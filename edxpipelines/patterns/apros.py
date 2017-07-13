@@ -11,15 +11,14 @@ Responsibilities:
         * return the pipeline that was created (or a list/namedtuple, if there were multiple pipelines).
 """
 from collections import namedtuple, defaultdict
-from functools import partial
 
-from gomatic import GitMaterial, PipelineMaterial
+from gomatic import PipelineMaterial
 
 from edxpipelines import constants, materials, utils
-from edxpipelines.materials import material_envvar_bash, EDX_APROS
+from edxpipelines.materials import material_envvar_bash
 from edxpipelines.patterns import jobs, stages
 from edxpipelines.patterns.authz import Permission, ensure_permissions
-from edxpipelines.utils import ArtifactLocation, EDP
+from edxpipelines.utils import ArtifactLocation
 
 STAGE_MCKA_EDXAPP = utils.EDP('stage', 'mckinsey', 'edxapp')
 STAGE_MCKA_APROS = utils.EDP('stage', 'mckinsey', 'apros')
@@ -28,12 +27,11 @@ PROD_MCKA_APROS = utils.EDP('prod', 'mckinsey', 'apros')
 MCKA_SUBAPPS = ['cms', 'lms', 'apros']
 
 
-def generate_single_deployment_service_pipelines(configurator,
-                                                 config,
-                                                 play,
-                                                 app_repo=None,
-                                                 has_migrations=True,
-                                                 application_user=None):
+def generate_deployment_service_pipelines(configurator,
+                                          config,
+                                          play,
+                                          has_migrations=True,
+                                          application_user=None):
     """
     Generates pipelines used to build and deploy a service to stage, loadtest,
     and prod, for only a single edx deployment.
@@ -179,6 +177,7 @@ def generate_service_deployment_pipelines(
     cd_pipeline.set_label_template(constants.DEPLOYMENT_PIPELINE_LABEL_TPL(app_material))
     build_stage = cd_pipeline.ensure_stage(constants.BUILD_AMI_STAGE_NAME)
     cd_deploy_stages = _generate_deployment_stages(cd_pipeline, has_migrations)
+    # cd_deploy_stages.deploy.set_has_manual_approval()
 
     # Frame out the manual deployment pipeline (and wire it to the continuous deployment pipeline)
     if manual_deployment_edps:
@@ -312,7 +311,7 @@ def generate_service_deployment_pipelines(
                 if has_migrations:
                     migration_info_location = ArtifactLocation(
                         pipeline.name,
-                        constants.DEPLOY_AMI_STAGE_NAME + '_' + sub_app,
+                        constants.DEPLOY_AMI_STAGE_NAME,
                         constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
                         constants.MIGRATION_OUTPUT_DIR_NAME,
                         is_dir=True
