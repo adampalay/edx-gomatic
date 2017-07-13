@@ -101,10 +101,8 @@ def generate_build_ami(stage,
                 app_repo_url,
                 private_github_key=config['github_private_key'],
                 hipchat_token=config['hipchat_token'],
-                configuration_secure_dir=configuration_secure_material
-                    .destination_directory,
-                configuration_internal_dir=configuration_internal_material
-                    .destination_directory,
+                configuration_secure_dir=configuration_secure_material.destination_directory,
+                configuration_internal_dir=configuration_internal_material.destination_directory,
                 disable_edx_services='true',
                 COMMON_TAG_EC2_INSTANCE='true',
                 **kwargs
