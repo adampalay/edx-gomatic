@@ -398,6 +398,15 @@ tools:
       - ["prod-edx", "../gomatic-secure/gocd/vars/tools/environment-deployment-play/prod-edx-ecomworker.yml"]
     enabled: True
 
+    # MCKA deployment script
+  - script: edxpipelines/pipelines/cd_edxapp_mcka.py
+    variable_file:
+      - "../gomatic-secure/gocd/vars/tools/admin.yml" # required
+      - "../gomatic-secure/gocd/vars/tools/environment-deployment-play/stage-mckinsey-edxapp.yml"
+      - *deployment-mckinsey
+      - *stage-mckinsey
+    enabled: true
+
 sandbox:
   - script: edxpipelines/pipelines/deploy_marketing_site.py
     variable_file:
@@ -412,12 +421,4 @@ sandbox:
       - "../gomatic-secure/gocd/vars/sandbox/loadtest-edxapp.yml"
     enabled: False
 
-  # MCKA deployment script
-  - script: edxpipelines/pipelines/cd_edxapp_mcka.py
-    variable_file:
-      - "../gomatic-secure/gocd/vars/tools/admin.yml" # required
-      - "../gomatic-secure/gocd/vars/tools/environment-deployment-play/stage-mckinsey-edxapp.yml"
-      - *deployment-mckinsey
-      - *stage-mckinsey
-    enabled: true
 
