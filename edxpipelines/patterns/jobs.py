@@ -57,12 +57,20 @@ def generate_build_ami(stage,
     tasks.generate_target_directory(job)
 
     # Locate the base AMI.
-    tasks.generate_base_ami_selection(
-        job,
-        config['aws_access_key_id'],
-        config['aws_secret_access_key'],
-        edp=edp[0]
-    )
+    if isinstance(edp, list):
+        tasks.generate_base_ami_selection(
+            job,
+            config['aws_access_key_id'],
+            config['aws_secret_access_key'],
+            edp=edp[0]
+        )
+    else:
+        tasks.generate_base_ami_selection(
+            job,
+            config['aws_access_key_id'],
+            config['aws_secret_access_key'],
+            edp=edp
+        )
 
     # Launch a new instance on which to build the AMI.
     tasks.generate_launch_instance(
