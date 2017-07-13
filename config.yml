@@ -415,7 +415,7 @@ sandbox:
   # MCKA deployment script
   - script: edxpipelines/pipelines/cd_edxapp_mcka.py
     variable_file:
-      - "../gomatic-secure/gocd/vars/sandbox/admin.yml" # required
+      - "../gomatic-secure/gocd/vars/tools/admin.yml" # required
       - "../gomatic-secure/gocd/vars/tools/environment-deployment-play/stage-mckinsey-edxapp.yml"
       - *deployment-mckinsey
       - *stage-mckinsey
