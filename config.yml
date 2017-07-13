@@ -405,7 +405,7 @@ tools:
       - "../gomatic-secure/gocd/vars/tools/environment-deployment-play/stage-mckinsey-edxapp.yml"
       - *deployment-mckinsey
       - *stage-mckinsey
-    enabled: true
+    enabled: True
 
 sandbox:
   - script: edxpipelines/pipelines/deploy_marketing_site.py
