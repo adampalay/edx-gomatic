@@ -47,7 +47,10 @@ def generate_build_ami(stage,
     Returns:
         gomatic.gocd.pipelines.Job
     """
-    job = stage.ensure_job(constants.BUILD_AMI_JOB_NAME_TPL(edp[0]))
+    if isinstance(edp, list):
+        job = stage.ensure_job(constants.BUILD_AMI_JOB_NAME_TPL(edp[0]))
+    else:
+        job = stage.ensure_job(constants.BUILD_AMI_JOB_NAME_TPL(edp))
 
     tasks.generate_requirements_install(job, 'configuration')
     tasks.generate_package_install(job, 'tubular')
