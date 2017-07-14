@@ -15,6 +15,7 @@ from collections import namedtuple, defaultdict
 from gomatic import PipelineMaterial
 
 from edxpipelines import constants, materials, utils
+from edxpipelines.constants import MCKA_PLAYBOOK_PATH, PLAYBOOK_PATH_TPL
 from edxpipelines.materials import material_envvar_bash
 from edxpipelines.patterns import jobs, stages
 from edxpipelines.patterns.authz import Permission, ensure_permissions
@@ -51,7 +52,6 @@ def generate_deployment_service_pipelines(configurator,
     back prod ASGs and migrations.
     """
     group = generate_service_pipeline_group(configurator, play)
-
     partial_app_material = materials.EDX_APROS
 
     generate_service_deployment_pipelines(
@@ -158,9 +158,14 @@ def generate_service_deployment_pipelines(
 
     all_edps = continuous_deployment_edps + manual_deployment_edps
     ed_dict = defaultdict(list)
+    ep_dict = defaultdict(list)
 
     for edp in all_edps:
         ed_dict[edp.environment].append(edp)
+        if edp.play == 'apros':
+            ep_dict[edp.play] = MCKA_PLAYBOOK_PATH
+        else:
+            ep_dict[edp.play] = PLAYBOOK_PATH_TPL(edp)
 
     plays = {edp.play for edp in all_edps}
     if not plays:
@@ -177,7 +182,7 @@ def generate_service_deployment_pipelines(
     cd_pipeline.set_label_template(constants.DEPLOYMENT_PIPELINE_LABEL_TPL(app_material))
     build_stage = cd_pipeline.ensure_stage(constants.BUILD_AMI_STAGE_NAME)
     cd_deploy_stages = _generate_deployment_stages(cd_pipeline, has_migrations)
-    # cd_deploy_stages.deploy.set_has_manual_approval()
+    cd_deploy_stages.deploy.set_has_manual_approval()
 
     # Frame out the manual deployment pipeline (and wire it to the continuous deployment pipeline)
     if manual_deployment_edps:
@@ -258,7 +263,7 @@ def generate_service_deployment_pipelines(
             app_material.url,
             secure_material,
             internal_material,
-            constants.MCKA_PLAYBOOK_PATH,
+            ep_dict,
             config[(ed_dict[ed])[0]],
             version_tags={
                 (ed_dict[ed])[0].play: (app_material.url, app_version_var),
@@ -276,57 +281,56 @@ def generate_service_deployment_pipelines(
             (manual_pipeline, manual_deploy_stages, manual_deployment_edps),
     ):
         for edp in edps:
-            for sub_app in MCKA_SUBAPPS:
-                ami_artifact_location = ArtifactLocation(
-                    cd_pipeline.name,
-                    constants.BUILD_AMI_STAGE_NAME,
-                    constants.BUILD_AMI_JOB_NAME_TPL(edp),
-                    constants.BUILD_AMI_FILENAME
-                )
+            ami_artifact_location = ArtifactLocation(
+                cd_pipeline.name,
+                constants.BUILD_AMI_STAGE_NAME,
+                constants.BUILD_AMI_JOB_NAME_TPL(edp),
+                constants.BUILD_AMI_FILENAME
+            )
 
-                jobs.generate_deploy_ami(
-                    deploy_stages.deploy,
-                    ami_artifact_location,
-                    edp,
-                    config[edp],
-                    has_migrations=has_migrations,
-                    application_user=application_user,
-                    sub_apps=sub_app
-                )
+            jobs.generate_deploy_ami(
+                deploy_stages.deploy,
+                ami_artifact_location,
+                edp,
+                config[edp],
+                has_migrations=has_migrations,
+                application_user=application_user,
+                sub_apps=MCKA_SUBAPPS
+            )
 
-                deployment_artifact_location = ArtifactLocation(
-                    pipeline.name,
-                    constants.DEPLOY_AMI_STAGE_NAME,
-                    constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
-                    constants.DEPLOY_AMI_OUT_FILENAME
-                )
+            deployment_artifact_location = ArtifactLocation(
+                pipeline.name,
+                constants.DEPLOY_AMI_STAGE_NAME,
+                constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
+                constants.DEPLOY_AMI_OUT_FILENAME
+            )
 
-                jobs.generate_rollback_asgs(
-                    deploy_stages.rollback_asgs,
-                    edp,
-                    deployment_artifact_location,
-                    config[edp],
-                )
-
-                if has_migrations:
-                    migration_info_location = ArtifactLocation(
+            jobs.generate_rollback_asgs(
+                deploy_stages.rollback_asgs,
+                edp,
+                deployment_artifact_location,
+                config[edp],
+            )
+            migration_info_location = defaultdict(ArtifactLocation)
+            if has_migrations:
+                for sub_app in MCKA_SUBAPPS:
+                    migration_info_location[sub_app] = ArtifactLocation(
                         pipeline.name,
-                        constants.DEPLOY_AMI_STAGE_NAME,
+                        constants.DEPLOY_AMI_STAGE_NAME + "_" + sub_app,
                         constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
                         constants.MIGRATION_OUTPUT_DIR_NAME,
                         is_dir=True
                     )
 
-                    jobs.generate_rollback_migrations(
-                        deploy_stages.rollback_migrations,
-                        edp,
-                        edp.play,
-                        edp.play,
-                        '/edx/app/{}'.format(edp.play),
-                        constants.DB_MIGRATION_USER,
-                        config[edp]['db_migration_pass'],
-                        migration_info_location,
-                        ami_artifact_location=ami_artifact_location,
-                        config=config[edp],
-                        sub_application_name=sub_app
-                    )
+                jobs.generate_rollback_migrations(
+                    deploy_stages.rollback_migrations,
+                    edp,
+                    edp.play,
+                    edp.play,
+                    '/edx/app/{}'.format(edp.play),
+                    constants.DB_MIGRATION_USER,
+                    config[edp]['db_migration_pass'],
+                    migration_info_location,
+                    ami_artifact_location=ami_artifact_location,
+                    config=config[edp],
+                )

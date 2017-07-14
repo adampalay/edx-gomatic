@@ -39,7 +39,8 @@ def generate_build_ami(stage,
             configuration material. Destination directory expected to be 'configuration-secure'.
         configuration_internal_material (gomatic.gomatic.gocd.materials.GitMaterial): Internal
             configuration material. Destination directory expected to be 'configuration-internal'.
-        playbook_path (str): Path to the Ansible playbook to run when creating the AMI.
+        playbook_path (str|dict): Path to the Ansible playbook to run when
+        creating the AMI.
         config (dict): Environment-specific secure config.
         version_tags (dict): An optional {app_name: (repo, version), ...} dict that
             specifies what versions to tag the AMI with.
@@ -96,7 +97,7 @@ def generate_build_ami(stage,
             param_play += edp_instanse.play
             tasks.generate_run_app_playbook(
                 job,
-                playbook_path,
+                playbook_path[edp_instanse.play],
                 edp_instanse,
                 app_repo_url,
                 private_github_key=config['github_private_key'],
@@ -161,7 +162,7 @@ def generate_deploy_ami(stage, ami_artifact_location, edp, config,
         config (dict): Environment-specific secure config.
         has_migrations (bool): Whether to generate Gomatic for applying migrations.
         application_user (str): application user if different from the play name.
-        sub_apps (str): Name of the sub application {cms|lms}
+        sub_apps (list|str): Name of the sub application {cms|lms}
 
     Returns:
         gomatic.gocd.pipelines.Job
@@ -296,7 +297,8 @@ def generate_rollback_migrations(
     Args:
         stage (gomatic.gocd.pipelines.Stage): Stage this job will be part of
         edp (EDP): EDP that this job will roll back
-        migration_info_location (edxpipelines.utils.ArtifactLocation): Location of
+        migration_info_location (edxpipelines.utils.ArtifactLocation|dict):
+        Location of
             the migration output to roll back
         inventory_location (edxpipelines.utils.ArtifactLocation): Location of the
             ansible inventory
@@ -350,18 +352,33 @@ def generate_rollback_migrations(
         key_pem_path=path_to_artifact(constants.KEY_PEM_FILENAME)
     ))
 
-    # Fetch the migration output.
-    tasks.retrieve_artifact(migration_info_location, job)
+    if isinstance(migration_info_location, dict):
+        for sub_app in migration_info_location.keys():
+            # Fetch the migration output.
+            tasks.retrieve_artifact(migration_info_location[sub_app], job)
 
-    tasks.generate_migration_rollback(
-        job=job,
-        application_user=application_user,
-        application_name=application_name,
-        application_path=application_path,
-        db_migration_user=db_migration_user,
-        db_migration_pass=db_migration_pass,
-        sub_application_name=sub_application_name,
-    )
+            tasks.generate_migration_rollback(
+                job=job,
+                application_user=application_user,
+                application_name=application_name,
+                application_path=application_path,
+                db_migration_user=db_migration_user,
+                db_migration_pass=db_migration_pass,
+                sub_application_name=sub_app,
+            )
+    else:
+        # Fetch the migration output.
+        tasks.retrieve_artifact(migration_info_location, job)
+
+        tasks.generate_migration_rollback(
+            job=job,
+            application_user=application_user,
+            application_name=application_name,
+            application_path=application_path,
+            db_migration_user=db_migration_user,
+            db_migration_pass=db_migration_pass,
+            sub_application_name=sub_application_name,
+        )
 
     # If an instance was launched as part of this job, clean it up.
     if is_instance_launch_required:
