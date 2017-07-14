@@ -81,7 +81,8 @@ def pipeline_script(install_pipelines, environments=(), edps=()):
             config['gocd_url'],
             config['gocd_username'],
             config['gocd_password'],
-            ssl=True
+            ssl=True,
+            verify_ssl=False
         ))
         return_val = install_pipelines(configurator, config)
         configurator.save_updated_config(save_config_locally=save_config_locally, dry_run=dry_run)
