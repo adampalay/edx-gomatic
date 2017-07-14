@@ -307,7 +307,8 @@ def generate_rollback_migrations(
         ami_artifact_location (edxpipelines.utils.ArtifactLocation): AMI to use when
             launching instance used to roll back migrations.
         config (dict): Environment-specific secure config.
-        sub_application_name (str): additional command to be passed to the migrate app {cms|lms}
+        sub_application_name (str|list): additional command to be passed to the
+        migrate app {cms|lms}
 
     Returns:
         gomatic.gocd.pipelines.Job
@@ -315,7 +316,10 @@ def generate_rollback_migrations(
     job_name = constants.ROLLBACK_MIGRATIONS_JOB_NAME_TPL(edp)
 
     if sub_application_name is not None:
-        job_name += '_{}'.format(sub_application_name)
+        if isinstance(sub_application_name, list):
+            pass
+        else:
+            job_name += '_{}'.format(sub_application_name)
 
     job = stage.ensure_job(job_name)
 
@@ -352,11 +356,9 @@ def generate_rollback_migrations(
         key_pem_path=path_to_artifact(constants.KEY_PEM_FILENAME)
     ))
 
-    if isinstance(migration_info_location, dict):
-        for sub_app in migration_info_location.keys():
-            # Fetch the migration output.
-            tasks.retrieve_artifact(migration_info_location[sub_app], job)
-
+    tasks.retrieve_artifact(migration_info_location, job)
+    if isinstance(sub_application_name, list):
+        for sub_app in sub_application_name:
             tasks.generate_migration_rollback(
                 job=job,
                 application_user=application_user,
@@ -368,8 +370,6 @@ def generate_rollback_migrations(
             )
     else:
         # Fetch the migration output.
-        tasks.retrieve_artifact(migration_info_location, job)
-
         tasks.generate_migration_rollback(
             job=job,
             application_user=application_user,

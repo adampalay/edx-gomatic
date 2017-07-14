@@ -297,7 +297,6 @@ def generate_service_deployment_pipelines(
                 application_user=application_user,
                 sub_apps=MCKA_SUBAPPS
             )
-
             deployment_artifact_location = ArtifactLocation(
                 pipeline.name,
                 constants.DEPLOY_AMI_STAGE_NAME,
@@ -311,16 +310,15 @@ def generate_service_deployment_pipelines(
                 deployment_artifact_location,
                 config[edp],
             )
-            migration_info_location = defaultdict(ArtifactLocation)
             if has_migrations:
-                for sub_app in MCKA_SUBAPPS:
-                    migration_info_location[sub_app] = ArtifactLocation(
-                        pipeline.name,
-                        constants.DEPLOY_AMI_STAGE_NAME + "_" + sub_app,
-                        constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
-                        constants.MIGRATION_OUTPUT_DIR_NAME,
-                        is_dir=True
-                    )
+
+                migration_info_location = ArtifactLocation(
+                    pipeline.name,
+                    constants.DEPLOY_AMI_STAGE_NAME,
+                    constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
+                    constants.MIGRATION_OUTPUT_DIR_NAME,
+                    is_dir=True
+                )
 
                 jobs.generate_rollback_migrations(
                     deploy_stages.rollback_migrations,
@@ -333,4 +331,5 @@ def generate_service_deployment_pipelines(
                     migration_info_location,
                     ami_artifact_location=ami_artifact_location,
                     config=config[edp],
+                    sub_application_name=MCKA_SUBAPPS
                 )
