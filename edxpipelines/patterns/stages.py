@@ -571,7 +571,7 @@ def generate_rollback_migrations(pipeline,
         migration_info_location=migration_info_location,
         inventory_location=inventory_location,
         instance_key_location=instance_key_location,
-        sub_application_name=sub_application_name,
+        sub_application_name=[sub_application_name],
     )
 
     return stage
