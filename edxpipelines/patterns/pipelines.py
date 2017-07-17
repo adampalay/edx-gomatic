@@ -391,11 +391,11 @@ def generate_service_deployment_pipelines(
 
         jobs.generate_build_ami(
             build_stage,
-            edp,
+            [edp],
             app_material.url,
             secure_material,
             internal_material,
-            constants.PLAYBOOK_PATH_TPL(edp),
+            {edp.play: constants.PLAYBOOK_PATH_TPL(edp)},
             config[edp],
             version_tags={
                 edp.play: (app_material.url, app_version_var),

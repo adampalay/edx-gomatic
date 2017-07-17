@@ -32,14 +32,14 @@ def generate_build_ami(stage,
 
     Args:
         stage (gomatic.gocd.pipelines.Stage): Stage to which this job belongs.
-        edp (edxpipelines.utils.EDP): Tuple indicating environment, deployment, and play
+        edp (list): List of tuple indicating environment, deployment and play
             for which an AMI will be created.
         app_repo_url (str): App repo's URL.
         configuration_secure_material (gomatic.gomatic.gocd.materials.GitMaterial): Secure
             configuration material. Destination directory expected to be 'configuration-secure'.
         configuration_internal_material (gomatic.gomatic.gocd.materials.GitMaterial): Internal
             configuration material. Destination directory expected to be 'configuration-internal'.
-        playbook_path (str|dict): Path to the Ansible playbook to run when
+        playbook_path (dict): Path to the Ansible playbook to run when
         creating the AMI.
         config (dict): Environment-specific secure config.
         version_tags (dict): An optional {app_name: (repo, version), ...} dict that
@@ -48,30 +48,19 @@ def generate_build_ami(stage,
     Returns:
         gomatic.gocd.pipelines.Job
     """
-    if isinstance(edp, list):
-        job = stage.ensure_job(constants.BUILD_AMI_JOB_NAME_TPL(edp[0]))
-    else:
-        job = stage.ensure_job(constants.BUILD_AMI_JOB_NAME_TPL(edp))
+    job = stage.ensure_job(constants.BUILD_AMI_JOB_NAME_TPL(edp[0]))
 
     tasks.generate_requirements_install(job, 'configuration')
     tasks.generate_package_install(job, 'tubular')
     tasks.generate_target_directory(job)
 
     # Locate the base AMI.
-    if isinstance(edp, list):
-        tasks.generate_base_ami_selection(
-            job,
-            config['aws_access_key_id'],
-            config['aws_secret_access_key'],
-            edp=edp[0]
-        )
-    else:
-        tasks.generate_base_ami_selection(
-            job,
-            config['aws_access_key_id'],
-            config['aws_secret_access_key'],
-            edp=edp
-        )
+    tasks.generate_base_ami_selection(
+        job,
+        config['aws_access_key_id'],
+        config['aws_secret_access_key'],
+        edp=edp[0]
+    )
 
     # Launch a new instance on which to build the AMI.
     tasks.generate_launch_instance(
@@ -87,36 +76,15 @@ def generate_build_ami(stage,
     tasks.generate_ensure_python2(job)
 
     param_play = ''
-    param_deployment = ''
-    param_environment = ''
+    param_environment = edp[0].environment
+    param_deployment = edp[0].deployment
     # Run the Ansible play for the service.
-    if isinstance(edp, list):
-        param_environment = edp[0].environment
-        param_deployment = edp[0].deployment
-        for edp_instanse in edp:
-            param_play += edp_instanse.play
-            tasks.generate_run_app_playbook(
-                job,
-                playbook_path[edp_instanse.play],
-                edp_instanse,
-                app_repo_url,
-                private_github_key=config['github_private_key'],
-                hipchat_token=config['hipchat_token'],
-                configuration_secure_dir=configuration_secure_material.destination_directory,
-                configuration_internal_dir=configuration_internal_material.destination_directory,
-                disable_edx_services='true',
-                COMMON_TAG_EC2_INSTANCE='true',
-                **kwargs
-            )
-    else:
-        param_play = edp.play
-        param_deployment = edp.deployment
-        param_environment = edp.environment
-
+    for edp_instanse in edp:
+        param_play += edp_instanse.play
         tasks.generate_run_app_playbook(
             job,
-            playbook_path,
-            edp,
+            playbook_path[edp_instanse.play],
+            edp_instanse,
             app_repo_url,
             private_github_key=config['github_private_key'],
             hipchat_token=config['hipchat_token'],
@@ -166,7 +134,7 @@ def generate_deploy_ami(stage,
         config (dict): Environment-specific secure config.
         has_migrations (bool): Whether to generate Gomatic for applying migrations.
         application_user (str): application user if different from the play name.
-        sub_apps (list|str): Name of the sub application {cms|lms}
+        sub_apps (list): Name of the sub application {cms|lms}
 
     Returns:
         gomatic.gocd.pipelines.Job
@@ -201,19 +169,8 @@ def generate_deploy_ami(stage,
         if application_user is None:
             application_user = edp.play
 
-        if sub_apps is not None:
-            if isinstance(sub_apps, list):
-                for sub_app in sub_apps:
-                    tasks.generate_run_migrations(
-                        job,
-                        application_user=application_user,
-                        application_name=application_user,
-                        application_path='/edx/app/{}'.format(application_user),
-                        db_migration_user=constants.DB_MIGRATION_USER,
-                        db_migration_pass=config['db_migration_pass'],
-                        sub_application_name=sub_app,
-                    )
-            else:
+        if sub_apps:
+            for sub_app in sub_apps:
                 tasks.generate_run_migrations(
                     job,
                     application_user=application_user,
@@ -221,7 +178,7 @@ def generate_deploy_ami(stage,
                     application_path='/edx/app/{}'.format(application_user),
                     db_migration_user=constants.DB_MIGRATION_USER,
                     db_migration_pass=config['db_migration_pass'],
-                    sub_application_name=sub_apps,
+                    sub_application_name=sub_app,
                 )
         else:
             tasks.generate_run_migrations(
@@ -311,7 +268,7 @@ def generate_rollback_migrations(
         ami_artifact_location (edxpipelines.utils.ArtifactLocation): AMI to use when
             launching instance used to roll back migrations.
         config (dict): Environment-specific secure config.
-        sub_application_name (str|list): additional command to be passed to the
+        sub_application_name (list): additional command to be passed to the
         migrate app {cms|lms}
 
     Returns:
@@ -320,10 +277,10 @@ def generate_rollback_migrations(
     job_name = constants.ROLLBACK_MIGRATIONS_JOB_NAME_TPL(edp)
 
     if sub_application_name is not None:
-        if isinstance(sub_application_name, list):
+        if len(sub_application_name) > 1:
             pass
         else:
-            job_name += '_{}'.format(sub_application_name)
+            job_name += '_{}'.format(sub_application_name[0])
 
     job = stage.ensure_job(job_name)
 
@@ -361,7 +318,7 @@ def generate_rollback_migrations(
     ))
 
     tasks.retrieve_artifact(migration_info_location, job)
-    if isinstance(sub_application_name, list):
+    if sub_application_name:
         for sub_app in sub_application_name:
             tasks.generate_migration_rollback(
                 job=job,
@@ -381,7 +338,6 @@ def generate_rollback_migrations(
             application_path=application_path,
             db_migration_user=db_migration_user,
             db_migration_pass=db_migration_pass,
-            sub_application_name=sub_application_name,
         )
 
     # If an instance was launched as part of this job, clean it up.
