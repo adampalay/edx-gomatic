@@ -280,56 +280,62 @@ def generate_service_deployment_pipelines(
             (cd_pipeline, cd_deploy_stages, continuous_deployment_edps),
             (manual_pipeline, manual_deploy_stages, manual_deployment_edps),
     ):
-        for edp in edps:
-            ami_artifact_location = ArtifactLocation(
-                cd_pipeline.name,
-                constants.BUILD_AMI_STAGE_NAME,
-                constants.BUILD_AMI_JOB_NAME_TPL(edp),
-                constants.BUILD_AMI_FILENAME
-            )
+        # As all EDPs here will have same Environments and Deployments and
+        # only difference is Plays and EDPs here are being used to create
+        # application user name only which employees environment and
+        # deployment only we can use any EDP.
+        # TODO: A better solution
+        edp = edps[0]
 
-            jobs.generate_deploy_ami(
-                deploy_stages.deploy,
-                ami_artifact_location,
-                edp,
-                config[edp],
-                has_migrations=has_migrations,
-                application_user=application_user,
-                sub_apps=MCKA_SUBAPPS
-            )
-            deployment_artifact_location = ArtifactLocation(
+        ami_artifact_location = ArtifactLocation(
+            cd_pipeline.name,
+            constants.BUILD_AMI_STAGE_NAME,
+            constants.BUILD_AMI_JOB_NAME_TPL(edp),
+            constants.BUILD_AMI_FILENAME
+        )
+
+        jobs.generate_deploy_ami(
+            deploy_stages.deploy,
+            ami_artifact_location,
+            edp,
+            config[edp],
+            has_migrations=has_migrations,
+            application_user=application_user,
+            sub_apps=MCKA_SUBAPPS
+        )
+        deployment_artifact_location = ArtifactLocation(
+            pipeline.name,
+            constants.DEPLOY_AMI_STAGE_NAME,
+            constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
+            constants.DEPLOY_AMI_OUT_FILENAME
+        )
+
+        jobs.generate_rollback_asgs(
+            deploy_stages.rollback_asgs,
+            edp,
+            deployment_artifact_location,
+            config[edp],
+        )
+        if has_migrations:
+
+            migration_info_location = ArtifactLocation(
                 pipeline.name,
                 constants.DEPLOY_AMI_STAGE_NAME,
                 constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
-                constants.DEPLOY_AMI_OUT_FILENAME
+                constants.MIGRATION_OUTPUT_DIR_NAME,
+                is_dir=True
             )
 
-            jobs.generate_rollback_asgs(
-                deploy_stages.rollback_asgs,
+            jobs.generate_rollback_migrations(
+                deploy_stages.rollback_migrations,
                 edp,
-                deployment_artifact_location,
-                config[edp],
+                edp.play,
+                edp.play,
+                '/edx/app/{}'.format(edp.play),
+                constants.DB_MIGRATION_USER,
+                config[edp]['db_migration_pass'],
+                migration_info_location,
+                ami_artifact_location=ami_artifact_location,
+                config=config[edp],
+                sub_application_name=MCKA_SUBAPPS
             )
-            if has_migrations:
-
-                migration_info_location = ArtifactLocation(
-                    pipeline.name,
-                    constants.DEPLOY_AMI_STAGE_NAME,
-                    constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
-                    constants.MIGRATION_OUTPUT_DIR_NAME,
-                    is_dir=True
-                )
-
-                jobs.generate_rollback_migrations(
-                    deploy_stages.rollback_migrations,
-                    edp,
-                    edp.play,
-                    edp.play,
-                    '/edx/app/{}'.format(edp.play),
-                    constants.DB_MIGRATION_USER,
-                    config[edp]['db_migration_pass'],
-                    migration_info_location,
-                    ami_artifact_location=ami_artifact_location,
-                    config=config[edp],
-                    sub_application_name=MCKA_SUBAPPS
-                )
