@@ -147,8 +147,12 @@ def generate_build_ami(stage,
     return job
 
 
-def generate_deploy_ami(stage, ami_artifact_location, edp, config,
-                        has_migrations=True, application_user=None,
+def generate_deploy_ami(stage,
+                        ami_artifact_location,
+                        edp,
+                        config,
+                        has_migrations=True,
+                        application_user=None,
                         sub_apps=None):
     """
     Generates a job for deploying an AMI. Migrations are applied as part of this job.
