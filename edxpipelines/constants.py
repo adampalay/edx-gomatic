@@ -134,7 +134,7 @@ PUBLIC_PRIVATE_PUSH_FILENAME = 'pub_priv_push.yml'
 # SHA and count are used together because SHA may not always be enough to uniquely
 # identify a build.
 DEPLOYMENT_PIPELINE_LABEL_TPL = '${{{.material_name}[:7]}}-${{COUNT}}'.format
-DB_MIGRATION_USER = 'migrate'
+DB_MIGRATION_USER = 'migrate001'
 MIGRATION_OUTPUT_DIR_NAME = 'migrations'
 PLAYBOOK_PATH_TPL = 'playbooks/edx-east/{.play}.yml'.format
 EDX_REPO_TPL = 'https://github.com/edx/{}.git'.format
