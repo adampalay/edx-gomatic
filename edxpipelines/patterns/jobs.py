@@ -15,11 +15,13 @@ Responsibilities:
 """
 import edxpipelines.constants as constants
 import edxpipelines.patterns.tasks as tasks
-from edxpipelines.utils import path_to_artifact
+from edxpipelines.utils import path_to_artifact, EDP
 
 
 def generate_build_ami(stage,
-                       edp,
+                       environment,
+                       deployment,
+                       plays,
                        app_repo_url,
                        configuration_secure_material,
                        configuration_internal_material,
@@ -32,15 +34,15 @@ def generate_build_ami(stage,
 
     Args:
         stage (gomatic.gocd.pipelines.Stage): Stage to which this job belongs.
-        edp (list): List of tuple indicating environment, deployment and play
-            for which an AMI will be created.
+        environment (str) Environment of AMI.
+        deployment (str) Deployment of AMI.
+        plays (list[str]) List of plays to run.
         app_repo_url (str): App repo's URL.
         configuration_secure_material (gomatic.gomatic.gocd.materials.GitMaterial): Secure
             configuration material. Destination directory expected to be 'configuration-secure'.
         configuration_internal_material (gomatic.gomatic.gocd.materials.GitMaterial): Internal
             configuration material. Destination directory expected to be 'configuration-internal'.
-        playbook_path (dict): Path to the Ansible playbook to run when
-        creating the AMI.
+        playbook_path (dict of str: str): Path to the Ansible playbook to run when creating the AMI.
         config (dict): Environment-specific secure config.
         version_tags (dict): An optional {app_name: (repo, version), ...} dict that
             specifies what versions to tag the AMI with.
@@ -48,7 +50,12 @@ def generate_build_ami(stage,
     Returns:
         gomatic.gocd.pipelines.Job
     """
-    job = stage.ensure_job(constants.BUILD_AMI_JOB_NAME_TPL(edp[0]))
+    job = stage.ensure_job(constants.BUILD_AMI_JOB_NAME_ED(environment,
+                                                           deployment))
+    plays_tag = ", ".join(play for play in plays)
+
+    # EDP that is used for tagging
+    edp = EDP(environment, deployment, plays_tag)
 
     tasks.generate_requirements_install(job, 'configuration')
     tasks.generate_package_install(job, 'tubular')
@@ -59,7 +66,7 @@ def generate_build_ami(stage,
         job,
         config['aws_access_key_id'],
         config['aws_secret_access_key'],
-        edp=edp[0]
+        edp=edp
     )
 
     # Launch a new instance on which to build the AMI.
@@ -75,16 +82,12 @@ def generate_build_ami(stage,
 
     tasks.generate_ensure_python2(job)
 
-    param_play = ''
-    param_environment = edp[0].environment
-    param_deployment = edp[0].deployment
     # Run the Ansible play for the service.
-    for edp_instanse in edp:
-        param_play += edp_instanse.play
+    for play in plays:
         tasks.generate_run_app_playbook(
             job,
-            playbook_path[edp_instanse.play],
-            edp_instanse,
+            playbook_path[play],
+            edp,
             app_repo_url,
             private_github_key=config['github_private_key'],
             hipchat_token=config['hipchat_token'],
@@ -98,9 +101,9 @@ def generate_build_ami(stage,
     # Create an AMI from the instance.
     tasks.generate_create_ami(
         job,
-        param_play,
-        param_deployment,
-        param_environment,
+        plays_tag,
+        deployment,
+        environment,
         app_repo_url,
         config['aws_access_key_id'],
         config['aws_secret_access_key'],
@@ -117,7 +120,9 @@ def generate_build_ami(stage,
 
 def generate_deploy_ami(stage,
                         ami_artifact_location,
-                        edp,
+                        environment,
+                        deployment,
+                        plays,
                         config,
                         has_migrations=True,
                         application_user=None,
@@ -129,6 +134,9 @@ def generate_deploy_ami(stage,
         stage (gomatic.gocd.pipelines.Stage): Stage to which this job belongs.
         ami_artifact_location (edxpipelines.utils.ArtifactLocation): Where to find
             the AMI artifact to deploy.
+        environment (str) Environment of AMI.
+        deployment (str) Deployment of AMI.
+        plays (list[str]) List of plays to run.
         edp (edxpipelines.utils.EDP): Tuple indicating environment, deployment, and play
             to which the AMI belongs.
         config (dict): Environment-specific secure config.
@@ -139,7 +147,7 @@ def generate_deploy_ami(stage,
     Returns:
         gomatic.gocd.pipelines.Job
     """
-    job = stage.ensure_job(constants.DEPLOY_AMI_JOB_NAME_TPL(edp))
+    job = stage.ensure_job(constants.DEPLOY_AMI_JOB_NAME_ED(environment, deployment))
 
     tasks.generate_requirements_install(job, 'configuration')
     tasks.generate_package_install(job, 'tubular')
@@ -166,8 +174,10 @@ def generate_deploy_ami(stage,
             key_pem_path=path_to_artifact(constants.KEY_PEM_FILENAME)
         ))
 
+        plays_tag = ", ".join(play for play in plays)
+
         if application_user is None:
-            application_user = edp.play
+            application_user = plays_tag
 
         if sub_apps:
             for sub_app in sub_apps:
@@ -239,7 +249,8 @@ def generate_rollback_asgs(stage, edp, deployment_artifact_location, config):
 
 def generate_rollback_migrations(
         stage,
-        edp,
+        environment,
+        deployment,
         application_user,
         application_name,
         application_path,
@@ -257,6 +268,8 @@ def generate_rollback_migrations(
 
     Args:
         stage (gomatic.gocd.pipelines.Stage): Stage this job will be part of
+        environment (str) Environment of AMI.
+        deployment (str) Deployment of AMI.
         edp (EDP): EDP that this job will roll back
         migration_info_location (edxpipelines.utils.ArtifactLocation|dict):
         Location of
@@ -274,7 +287,7 @@ def generate_rollback_migrations(
     Returns:
         gomatic.gocd.pipelines.Job
     """
-    job_name = constants.ROLLBACK_MIGRATIONS_JOB_NAME_TPL(edp)
+    job_name = constants.ROLLBACK_MIGRATIONS_JOB_NAME_ED(environment, deployment)
 
     if sub_application_name is not None:
         if len(sub_application_name) > 1:

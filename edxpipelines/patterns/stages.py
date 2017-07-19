@@ -562,7 +562,8 @@ def generate_rollback_migrations(pipeline,
 
     jobs.generate_rollback_migrations(
         stage,
-        edp,
+        edp.environment,
+        edp.deployment,
         application_user=application_user,
         application_name=application_name,
         application_path=application_path,

@@ -9,12 +9,14 @@ ARM_PRERELEASE_STAGE = 'arm_prerelease'
 DEPLOY_AMI_STAGE_NAME = 'deploy_ami'
 DEPLOY_AMI_JOB_NAME = 'deploy_ami_job'
 DEPLOY_AMI_JOB_NAME_TPL = '{0.environment}_{0.deployment}'.format
+DEPLOY_AMI_JOB_NAME_ED = '{0}_{1}'.format
 E2E_TESTS_STAGE_NAME = 'e2e_tests'
 RUN_MIGRATIONS_STAGE_NAME = 'apply_migrations'
 RUN_MIGRATIONS_JOB_NAME = 'apply_migrations_job'
 BUILD_AMI_STAGE_NAME = 'build_ami'
 BUILD_AMI_JOB_NAME = 'build_ami_job'
 BUILD_AMI_JOB_NAME_TPL = '{0.environment}_{0.deployment}'.format
+BUILD_AMI_JOB_NAME_ED = '{0}_{1}'.format
 TERMINATE_INSTANCE_STAGE_NAME = 'cleanup_ami_Instance'
 TERMINATE_INSTANCE_JOB_NAME = 'cleanup_ami_instance_job'
 LAUNCH_INSTANCE_STAGE_NAME = 'launch_instance'
@@ -33,6 +35,7 @@ ROLLBACK_ASGS_JOB_NAME = 'rollback_asgs_job'
 ROLLBACK_ASGS_JOB_NAME_TPL = '{0.environment}_{0.deployment}'.format
 ROLLBACK_MIGRATIONS_STAGE_NAME = 'rollback_migrations'
 ROLLBACK_MIGRATIONS_JOB_NAME_TPL = '{0.environment}_{0.deployment}'.format
+ROLLBACK_MIGRATIONS_JOB_NAME_ED = '{0}_{1}'.format
 ARMED_STAGE_NAME = 'armed_stage'
 ARMED_JOB_NAME = 'armed_job'
 PRERELEASE_MATERIALS_STAGE_NAME = 'prerelease_materials'
@@ -172,8 +175,6 @@ STAGE_TAG_NAME = 'test_tag_name'
 PROD_TAG_NAME = 'prod_tag_name'
 STAGE_ENV = 'test'
 PROD_ENV = 'prod'
-
-MCKA_PLAYBOOK_PATH = '../mcka-ansible/mckinseyapros.yml'
 
 # key is the steps of the desired pipeline (build/migrate/deploy)
 # value is the suffix used for the pipeline name

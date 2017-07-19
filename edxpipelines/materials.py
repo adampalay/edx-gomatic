@@ -194,5 +194,5 @@ EDX_PLATFORM_SOLUTION = partial(
     GitMaterial,
     url='git@github.com:edx-solutions/edx-platform',
     polling=True,
-    destination_directory='edx-platform'
+    destination_directory='edx-platform-solution'
 )

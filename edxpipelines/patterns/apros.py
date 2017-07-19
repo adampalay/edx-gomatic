@@ -15,7 +15,7 @@ from collections import namedtuple, defaultdict
 from gomatic import PipelineMaterial
 
 from edxpipelines import constants, materials, utils
-from edxpipelines.constants import MCKA_PLAYBOOK_PATH, PLAYBOOK_PATH_TPL
+from edxpipelines.constants import PLAYBOOK_PATH_TPL
 from edxpipelines.materials import material_envvar_bash
 from edxpipelines.patterns import jobs, stages
 from edxpipelines.patterns.authz import Permission, ensure_permissions
@@ -26,6 +26,7 @@ STAGE_MCKA_APROS = utils.EDP('stage', 'mckinsey', 'apros')
 PROD_MCKA_EDXAPP = utils.EDP('prod', 'mckinsey', 'edxapp')
 PROD_MCKA_APROS = utils.EDP('prod', 'mckinsey', 'apros')
 MCKA_SUBAPPS = ['cms', 'lms', 'apros']
+MCKA_PLAYBOOK_PATH = '../mcka-ansible/mckinseyapros.yml'
 
 
 def generate_deployment_service_pipelines(configurator,
@@ -254,19 +255,25 @@ def generate_service_deployment_pipelines(
             '{}_VERSION'.format(play.upper()): app_version_var,
         }
 
-        secure_material = secure_materials[(ed_dict[ed])[0]]
-        internal_material = internal_materials[(ed_dict[ed])[0]]
+        # We are picking first one because this edp is being used to get E
+        # and D which will be same for each EDP
+        edp_tag = (ed_dict[ed])[0]
+
+        secure_material = secure_materials[edp_tag]
+        internal_material = internal_materials[edp_tag]
 
         jobs.generate_build_ami(
             build_stage,
-            ed_dict[ed],
+            edp_tag.environment,
+            edp_tag.deployment,
+            [edp.play for edp in ed_dict[ed]],
             app_material.url,
             secure_material,
             internal_material,
             ep_dict,
-            config[(ed_dict[ed])[0]],
+            config[edp_tag],
             version_tags={
-                (ed_dict[ed])[0].play: (app_material.url, app_version_var),
+                edp_tag.play: (app_material.url, app_version_var),
                 (ed_dict[ed])[1].play: (app_material.url, app_version_var),
                 'configuration': (configuration_material.url, material_envvar_bash(configuration_material)),
                 'configuration_secure': (secure_material.url, material_envvar_bash(secure_material)),
@@ -297,7 +304,9 @@ def generate_service_deployment_pipelines(
         jobs.generate_deploy_ami(
             deploy_stages.deploy,
             ami_artifact_location,
-            edp,
+            edp.environment,
+            edp.deployment,
+            [edp_instance.play for edp_instance in edps],
             config[edp],
             has_migrations=has_migrations,
             application_user=application_user,
@@ -328,7 +337,8 @@ def generate_service_deployment_pipelines(
 
             jobs.generate_rollback_migrations(
                 deploy_stages.rollback_migrations,
-                edp,
+                edp.environment,
+                edp.deployment,
                 edp.play,
                 edp.play,
                 '/edx/app/{}'.format(edp.play),

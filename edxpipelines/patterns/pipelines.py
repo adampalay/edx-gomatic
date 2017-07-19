@@ -391,7 +391,9 @@ def generate_service_deployment_pipelines(
 
         jobs.generate_build_ami(
             build_stage,
-            [edp],
+            edp.environment,
+            edp.deployment,
+            [edp.play],
             app_material.url,
             secure_material,
             internal_material,
@@ -431,7 +433,9 @@ def generate_service_deployment_pipelines(
             jobs.generate_deploy_ami(
                 deploy_stages.deploy,
                 ami_artifact_location,
-                edp,
+                edp.environment,
+                edp.deployment,
+                [edp.play],
                 config[edp],
                 has_migrations=has_migrations,
                 application_user=application_user,
@@ -463,7 +467,8 @@ def generate_service_deployment_pipelines(
 
                 jobs.generate_rollback_migrations(
                     deploy_stages.rollback_migrations,
-                    edp,
+                    edp.environment,
+                    edp.deployment,
                     edp.play,
                     edp.play,
                     '/edx/app/{}'.format(edp.play),
