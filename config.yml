@@ -11,6 +11,7 @@ anchors:
   - &prod-edx      "../gomatic-secure/gocd/vars/tools/environment-deployments/prod-edx.yml"
   - &prod-edge     "../gomatic-secure/gocd/vars/tools/environment-deployments/prod-edge.yml"
   - &prod-mckinsey "../gomatic-secure/gocd/vars/tools/environment-deployments/prod-mckinsey.yml"
+  - &stage-mckinsey "../gomatic-secure/gocd/vars/tools/environment-deployments/stage-mckinsey.yml"
   - &loadtest-edx  "../gomatic-secure/gocd/vars/tools/environment-deployments/loadtest-edx.yml"
 
   - &play-edxapp      "edxpipelines/pipelines/config/edxapp.yml"
@@ -24,6 +25,7 @@ anchors:
 
   - &prod-edx-edxapp-latest-secure  "../gomatic-secure/gocd/vars/tools/environment-deployment-play/prod-edx-edxapp-latest.yml"
   - &prod-edge-edxapp-latest-secure "../gomatic-secure/gocd/vars/tools/environment-deployment-play/prod-edge-edxapp-latest.yml"
+  - &prod-mckinsey-edxapp "../gomatic-secure/gocd/vars/tools/environment-deployment-play/prod-mckinsey-edxapp.yml"
 
 tools:
   ## Start of 'Janitors' pipeline group
@@ -396,6 +398,15 @@ tools:
       - ["prod-edx", "../gomatic-secure/gocd/vars/tools/environment-deployment-play/prod-edx-ecomworker.yml"]
     enabled: True
 
+    # MCKA deployment script
+  - script: edxpipelines/pipelines/cd_edxapp_mcka.py
+    variable_file:
+      - "../gomatic-secure/gocd/vars/tools/admin.yml" # required
+      - "../gomatic-secure/gocd/vars/tools/environment-deployment-play/stage-mckinsey-edxapp.yml"
+      - *deployment-mckinsey
+      - *stage-mckinsey
+    enabled: True
+
 sandbox:
   - script: edxpipelines/pipelines/deploy_marketing_site.py
     variable_file:
@@ -409,3 +420,5 @@ sandbox:
       - *tools-admin
       - "../gomatic-secure/gocd/vars/sandbox/loadtest-edxapp.yml"
     enabled: False
+
+
