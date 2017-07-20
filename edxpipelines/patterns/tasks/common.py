@@ -640,7 +640,6 @@ def generate_run_migrations(
     ]
 
     if sub_application_name is not None:
-        # TODO Jawad - this will also need to be moved to variables and not as an environment variable.
         variables.append(('SUB_APPLICATION_NAME', sub_application_name))
 
     return job.add_task(ansible_task(
