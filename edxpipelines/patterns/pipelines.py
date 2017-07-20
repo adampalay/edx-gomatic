@@ -72,7 +72,8 @@ def generate_single_deployment_service_pipelines(configurator,
                                                  application_user=None,
                                                  run_e2e_tests_after_deploy=False,
                                                  additional_migrations=None,
-                                                 deployment='edx'):
+                                                 deployment='edx',
+                                                 playbook_path_tpl=constants.PLAYBOOK_PATH_TPL):
     """
     Generates pipelines used to build and deploy a service to stage, loadtest,
     and prod, for only a single edx deployment.
@@ -124,6 +125,7 @@ def generate_single_deployment_service_pipelines(configurator,
         application_user=application_user,
         run_e2e_tests_after_deploy=run_e2e_tests_after_deploy,
         additional_migrations=additional_migrations,
+        playbook_path_tpl=playbook_path_tpl,
     )
     generate_service_deployment_pipelines(
         group,
@@ -135,6 +137,7 @@ def generate_single_deployment_service_pipelines(configurator,
         application_user=application_user,
         run_e2e_tests_after_deploy=False,
         additional_migrations=additional_migrations,
+        playbook_path_tpl=playbook_path_tpl,
     )
 
 
@@ -267,6 +270,7 @@ def generate_service_deployment_pipelines(
         application_user=None,
         run_e2e_tests_after_deploy=False,
         additional_migrations=None,
+        playbook_path_tpl=constants.PLAYBOOK_PATH_TPL,
 ):
     """
     Generates pipelines used to build and deploy a service to multiple environments/deployments.
@@ -297,6 +301,7 @@ def generate_service_deployment_pipelines(
             deploying a continuous deployment EDP.
         additional_migrations (list[edxpipelines.utils.MigrationAppInfo]): Additional applications to migrate.
             Will only run if has_migrations=True
+        playbook_path_tpl (str): Path to the playbook to run. Defaults to constants.PLAYBOOK_PATH_TPL
     """
     if not additional_migrations:
         additional_migrations = []
@@ -412,7 +417,7 @@ def generate_service_deployment_pipelines(
             app_material.url,
             secure_material,
             internal_material,
-            constants.PLAYBOOK_PATH_TPL(edp),
+            playbook_path_tpl.format(edp.play),
             config[edp],
             version_tags={
                 edp.play: (app_material.url, app_version_var),
