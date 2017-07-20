@@ -140,7 +140,7 @@ DB_MIGRATION_USER = 'migrate'
 MIGRATION_OUTPUT_DIR_NAME = 'migrations'
 # new Migration output dir name:
 MIGRATION_OUTPUT_DIR_NAME_WITH_APP = 'migrations_{}'.format
-PLAYBOOK_PATH_TPL = 'playbooks/edx-east/{.play}.yml'.format
+PLAYBOOK_PATH_TPL = 'playbooks/edx-east/{}.yml'.format
 EDX_REPO_TPL = 'https://github.com/edx/{}.git'.format
 
 
