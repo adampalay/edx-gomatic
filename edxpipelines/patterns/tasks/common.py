@@ -620,9 +620,6 @@ def generate_run_migrations(
 
     job.ensure_environment_variables(
         {
-            'APPLICATION_USER': application_user,
-            'APPLICATION_NAME': application_name,
-            'APPLICATION_PATH': application_path,
             'DB_MIGRATION_USER': db_migration_user,
         }
     )
@@ -639,9 +636,9 @@ def generate_run_migrations(
     )
 
     variables = [
-        ('APPLICATION_PATH', '$APPLICATION_PATH'),
-        ('APPLICATION_NAME', '$APPLICATION_NAME'),
-        ('APPLICATION_USER', '$APPLICATION_USER'),
+        ('APPLICATION_PATH', application_path),
+        ('APPLICATION_NAME', application_name),
+        ('APPLICATION_USER', application_user),
         ('ARTIFACT_PATH', '`/bin/pwd`/../' + migration_artifact_path),
         ('DB_MIGRATION_USER', '$DB_MIGRATION_USER'),
         ('DB_MIGRATION_PASS', '$DB_MIGRATION_PASS'),
@@ -793,9 +790,6 @@ def generate_migration_rollback(
     """
     job.ensure_environment_variables(
         {
-            'APPLICATION_USER': application_user,
-            'APPLICATION_NAME': application_name,
-            'APPLICATION_PATH': application_path,
             'DB_MIGRATION_USER': db_migration_user,
         }
     )
@@ -823,9 +817,9 @@ def generate_migration_rollback(
         '--private-key=$PRIVATE_KEY',
         '--module-path=playbooks/library',
         '--user=ubuntu',
-        '-e APPLICATION_PATH=$APPLICATION_PATH',
-        '-e APPLICATION_NAME=$APPLICATION_NAME',
-        '-e APPLICATION_USER=$APPLICATION_USER',
+        '-e APPLICATION_PATH=' + application_path,
+        '-e APPLICATION_NAME=' + application_name,
+        '-e APPLICATION_USER=' + application_user,
         '-e ARTIFACT_PATH=`/bin/pwd`/../{rollback_output_dir_path}',
         '-e DB_MIGRATION_USER=$DB_MIGRATION_USER',
         '-e DB_MIGRATION_PASS=$DB_MIGRATION_PASS',
