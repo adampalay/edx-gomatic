@@ -184,6 +184,7 @@ def generate_deploy_ami(stage,
                 application_path=migration.path,
                 db_migration_user=constants.DB_MIGRATION_USER,
                 db_migration_pass=config['db_migration_pass'],
+                sub_application_name=migration.sub_application_name
             )
 
         tasks.generate_ami_cleanup(job, config['hipchat_token'], runif='any')
