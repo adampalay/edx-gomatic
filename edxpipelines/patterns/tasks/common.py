@@ -618,11 +618,6 @@ def generate_run_migrations(
 
     migration_artifact_path = path_to_artifact(constants.MIGRATION_OUTPUT_DIR_NAME)
 
-    job.ensure_environment_variables(
-        {
-            'DB_MIGRATION_USER': db_migration_user,
-        }
-    )
     job.ensure_encrypted_environment_variables(
         {
             'DB_MIGRATION_PASS': db_migration_pass,
@@ -640,7 +635,7 @@ def generate_run_migrations(
         ('APPLICATION_NAME', application_name),
         ('APPLICATION_USER', application_user),
         ('ARTIFACT_PATH', '`/bin/pwd`/../' + migration_artifact_path),
-        ('DB_MIGRATION_USER', '$DB_MIGRATION_USER'),
+        ('DB_MIGRATION_USER', db_migration_user),
         ('DB_MIGRATION_PASS', '$DB_MIGRATION_PASS'),
     ]
 
@@ -788,11 +783,6 @@ def generate_migration_rollback(
         The newly created task (gomatic.gocd.tasks.ExecTask)
 
     """
-    job.ensure_environment_variables(
-        {
-            'DB_MIGRATION_USER': db_migration_user,
-        }
-    )
     job.ensure_encrypted_environment_variables(
         {
             'DB_MIGRATION_PASS': db_migration_pass,
@@ -821,7 +811,7 @@ def generate_migration_rollback(
         '-e APPLICATION_NAME=' + application_name,
         '-e APPLICATION_USER=' + application_user,
         '-e ARTIFACT_PATH=`/bin/pwd`/../{rollback_output_dir_path}',
-        '-e DB_MIGRATION_USER=$DB_MIGRATION_USER',
+        '-e DB_MIGRATION_USER=' + db_migration_user,
         '-e DB_MIGRATION_PASS=$DB_MIGRATION_PASS',
         '-e @${{migration_plan}}',
     ]
