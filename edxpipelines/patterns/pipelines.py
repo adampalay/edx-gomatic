@@ -390,6 +390,7 @@ def generate_service_deployment_pipelines(
             materials.TUBULAR(),
             configuration_material,
             materials.EDX_ANSIBLE_PRIVATE(),
+            materials.MCKA_ANSIBLE_PRIVATE(),
     ] + secure_materials.values() + internal_materials.values():
         cd_pipeline.ensure_material(material)
         if manual_pipeline:

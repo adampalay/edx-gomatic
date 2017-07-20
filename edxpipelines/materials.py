@@ -163,10 +163,10 @@ EDX_ORA2 = partial(
 
 EDX_APROS = partial(
     GitMaterial,
-    url='git@github.com:edx-ops/apros',
+    url='git@github.com:mckinseyacademy/mcka_apros.git',
     polling=True,
-    destination_directory='apros',
-    material_name='apros'
+    destination_directory='mcka_apros',
+    material_name='mcka_apros'
 )
 
 EDX_ANSIBLE_PRIVATE = partial(
@@ -174,6 +174,13 @@ EDX_ANSIBLE_PRIVATE = partial(
     url='git@github.com:edx-ops/ansible-private',
     polling=True,
     destination_directory='ansible-private'
+)
+
+MCKA_ANSIBLE_PRIVATE = partial(
+    GitMaterial,
+    url='git@github.com:mckinseyacademy/mcka-ansible.git',
+    polling=True,
+    destination_directory='mcka-ansible'
 )
 
 EDX_PLATFORM_SOLUTION = partial(
