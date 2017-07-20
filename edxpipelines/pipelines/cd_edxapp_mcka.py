@@ -34,7 +34,7 @@ def install_pipelines(configurator, config):
         # later will just leave this string as is invoking the correct play. #dirtyhack #non_standard_play_name.
         # John, I know you are reading this and cringing, I didn't want to rename the role
         # and break the other automation.
-        playbook_path_tpl='../ansible-private/roles/mckinsey_apros.yml'
+        playbook_path_tpl='../ansible-private/roles/mckinsey_apros.yml'.format
     )
 
 if __name__ == '__main__':

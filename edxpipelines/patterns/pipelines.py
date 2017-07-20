@@ -417,7 +417,7 @@ def generate_service_deployment_pipelines(
             app_material.url,
             secure_material,
             internal_material,
-            playbook_path_tpl.format(edp.play),
+            playbook_path_tpl(edp.play),
             config[edp],
             version_tags={
                 edp.play: (app_material.url, app_version_var),
