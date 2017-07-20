@@ -109,7 +109,13 @@ def generate_build_ami(stage,
     return job
 
 
-def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migrations=True, application_user=None):
+def generate_deploy_ami(stage,
+                        ami_artifact_location,
+                        edp,
+                        config,
+                        has_migrations=True,
+                        application_user=None,
+                        additional_migrations=None,):
     """
     Generates a job for deploying an AMI. Migrations are applied as part of this job.
 
@@ -122,10 +128,15 @@ def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migration
         config (dict): Environment-specific secure config.
         has_migrations (bool): Whether to generate Gomatic for applying migrations.
         application_user (str): application user if different from the play name.
+        additional_migrations (list[edxpipelines.utils.MigrationAppInfo]): Additional applications to migrate.
+            Will only run if has_migrations=True
 
     Returns:
         gomatic.gocd.pipelines.Job
     """
+    if not additional_migrations:
+        additional_migrations = []
+
     job = stage.ensure_job(constants.DEPLOY_AMI_JOB_NAME_TPL(edp))
 
     tasks.generate_requirements_install(job, 'configuration')
@@ -164,6 +175,16 @@ def generate_deploy_ami(stage, ami_artifact_location, edp, config, has_migration
             db_migration_user=constants.DB_MIGRATION_USER,
             db_migration_pass=config['db_migration_pass'],
         )
+
+        for migration in additional_migrations:
+            tasks.generate_run_migrations(
+                job,
+                application_user=migration.name,
+                application_name=migration.name,
+                application_path=migration.path,
+                db_migration_user=constants.DB_MIGRATION_USER,
+                db_migration_pass=config['db_migration_pass'],
+            )
 
         tasks.generate_ami_cleanup(job, config['hipchat_token'], runif='any')
 
@@ -225,7 +246,8 @@ def generate_rollback_migrations(
         instance_key_location=None,
         ami_artifact_location=None,
         config=None,
-        sub_application_name=None
+        sub_application_name=None,
+        additional_migrations=None,
 ):
     """
     Generates a job for rolling back database migrations.
@@ -243,10 +265,15 @@ def generate_rollback_migrations(
             launching instance used to roll back migrations.
         config (dict): Environment-specific secure config.
         sub_application_name (str): additional command to be passed to the migrate app {cms|lms}
+        additional_migrations (list[edxpipelines.utils.MigrationAppInfo]): Additional applications to migrate.
+            Will only run if has_migrations=True
 
     Returns:
         gomatic.gocd.pipelines.Job
     """
+    if not additional_migrations:
+        additional_migrations = []
+
     job_name = constants.ROLLBACK_MIGRATIONS_JOB_NAME_TPL(edp)
 
     if sub_application_name is not None:
@@ -299,6 +326,17 @@ def generate_rollback_migrations(
         db_migration_pass=db_migration_pass,
         sub_application_name=sub_application_name,
     )
+
+    for migration_info in additional_migrations:
+        tasks.generate_migration_rollback(
+            job=job,
+            application_user=migration_info.name,
+            application_name=migration_info.name,
+            application_path=migration_info.path,
+            db_migration_user=db_migration_user,
+            db_migration_pass=db_migration_pass,
+            sub_application_name=migration_info.sub_application_name,
+        )
 
     # If an instance was launched as part of this job, clean it up.
     if is_instance_launch_required:

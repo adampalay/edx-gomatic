@@ -70,7 +70,9 @@ def generate_single_deployment_service_pipelines(configurator,
                                                  app_repo=None,
                                                  has_migrations=True,
                                                  application_user=None,
-                                                 run_e2e_tests_after_deploy=False):
+                                                 run_e2e_tests_after_deploy=False,
+                                                 additional_migrations=None,
+                                                 deployment='edx'):
     """
     Generates pipelines used to build and deploy a service to stage, loadtest,
     and prod, for only a single edx deployment.
@@ -93,7 +95,13 @@ def generate_single_deployment_service_pipelines(configurator,
     It polls a GitMaterial representing the service. When a change is detected on the
     loadtest branch, it builds AMIs for loadtest, deploys to loadtest, and gives
     pipeline operators the option of rolling back loadtest ASGs and migrations.
+
+    additional_migrations (list[edxpipelines.utils.MigrationAppInfo]): Additional applications to migrate.
+            Will only run if has_migrations=True
     """
+    if not additional_migrations:
+        additional_migrations = []
+
     group = generate_service_pipeline_group(configurator, play)
 
     partial_app_material = partial(
@@ -110,21 +118,23 @@ def generate_single_deployment_service_pipelines(configurator,
         group,
         config,
         partial_app_material(),
-        continuous_deployment_edps=[EDP('stage', 'edx', play)],
-        manual_deployment_edps=[EDP('prod', 'edx', play)],
+        continuous_deployment_edps=[EDP('stage', deployment, play)],
+        manual_deployment_edps=[EDP('prod', deployment, play)],
         has_migrations=has_migrations,
         application_user=application_user,
         run_e2e_tests_after_deploy=run_e2e_tests_after_deploy,
+        additional_migrations=additional_migrations,
     )
     generate_service_deployment_pipelines(
         group,
         config,
         partial_app_material(branch='loadtest'),
-        continuous_deployment_edps=[EDP('loadtest', 'edx', play)],
+        continuous_deployment_edps=[EDP('loadtest', deployment, play)],
         configuration_branch='loadtest-{}'.format(play),
         has_migrations=has_migrations,
         application_user=application_user,
         run_e2e_tests_after_deploy=False,
+        additional_migrations=additional_migrations,
     )
 
 
@@ -256,6 +266,7 @@ def generate_service_deployment_pipelines(
         manual_pipeline_name=None,
         application_user=None,
         run_e2e_tests_after_deploy=False,
+        additional_migrations=None,
 ):
     """
     Generates pipelines used to build and deploy a service to multiple environments/deployments.
@@ -284,7 +295,12 @@ def generate_service_deployment_pipelines(
         application_user (str): Name of the user application user if different from the play name.
         run_e2e_tests_after_deploy (bool): Indicates if end-to-end tests should be triggered after
             deploying a continuous deployment EDP.
+        additional_migrations (list[edxpipelines.utils.MigrationAppInfo]): Additional applications to migrate.
+            Will only run if has_migrations=True
     """
+    if not additional_migrations:
+        additional_migrations = []
+
     continuous_deployment_edps = tuple(continuous_deployment_edps)
     manual_deployment_edps = tuple(manual_deployment_edps)
 
@@ -368,6 +384,7 @@ def generate_service_deployment_pipelines(
     for material in [
             materials.TUBULAR(),
             configuration_material,
+            materials.EDX_ANSIBLE_PRIVATE(),
     ] + secure_materials.values() + internal_materials.values():
         cd_pipeline.ensure_material(material)
         if manual_pipeline:
@@ -435,6 +452,7 @@ def generate_service_deployment_pipelines(
                 config[edp],
                 has_migrations=has_migrations,
                 application_user=application_user,
+                additional_migrations=additional_migrations,
             )
 
             deployment_artifact_location = ArtifactLocation(
@@ -457,7 +475,7 @@ def generate_service_deployment_pipelines(
                     pipeline.name,
                     constants.DEPLOY_AMI_STAGE_NAME,
                     constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
-                    constants.MIGRATION_OUTPUT_DIR_NAME,
+                    constants.MIGRATION_OUTPUT_DIR_NAME_WITH_APP(edp.play),
                     is_dir=True
                 )
 

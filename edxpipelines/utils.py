@@ -29,6 +29,9 @@ ArtifactLocation.__new__.__defaults__ = (False,)
 EDP = namedtuple('EDP', ['environment', 'deployment', 'play'])
 EDP.__new__.__defaults__ = (None, None)
 
+MigrationAppInfo = namedtuple('MigrationAppInfo', ['name', 'path', 'sub_application_name'])
+MigrationAppInfo.__new__.__defaults__ = (None,)
+
 
 class ConfigMerger(object):
     """

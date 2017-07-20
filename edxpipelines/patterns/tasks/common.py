@@ -616,7 +616,7 @@ def generate_run_migrations(
     if not launch_artifacts_base_path:
         launch_artifacts_base_path = constants.ARTIFACT_PATH
 
-    migration_artifact_path = path_to_artifact(constants.MIGRATION_OUTPUT_DIR_NAME)
+    migration_artifact_path = path_to_artifact(constants.MIGRATION_OUTPUT_DIR_NAME_WITH_APP(application_name))
 
     job.ensure_encrypted_environment_variables(
         {
@@ -789,7 +789,7 @@ def generate_migration_rollback(
         }
     )
 
-    rollback_output_dir_path = path_to_artifact('rollback/migrations')
+    rollback_output_dir_path = path_to_artifact('rollback/migrations_{}'.format(application_name))
     generate_target_directory(job, rollback_output_dir_path)
 
     job.ensure_artifacts(
@@ -825,7 +825,7 @@ def generate_migration_rollback(
         ' '.join(command),
         working_dir=constants.PUBLIC_CONFIGURATION_DIR,
         runif=runif,
-        rollback_input_dir_path=path_to_artifact(constants.MIGRATION_OUTPUT_DIR_NAME),
+        rollback_input_dir_path=path_to_artifact(constants.MIGRATION_OUTPUT_DIR_NAME_WITH_APP),
         key_pem_path=path_to_artifact(constants.KEY_PEM_FILENAME),
         inventory_path=path_to_artifact(constants.ANSIBLE_INVENTORY_FILENAME),
         rollback_output_dir_path=rollback_output_dir_path,

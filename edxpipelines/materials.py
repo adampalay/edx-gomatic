@@ -169,21 +169,7 @@ EDX_APROS = partial(
     material_name='apros'
 )
 
-EDX_MCKA_SECURE = partial(
-    GitMaterial,
-    url='git@github.com:edx-ops/mckinsey-secure',
-    polling=True,
-    destination_directory='mckinsey-secure'
-)
-
-EDX_MCKA_INTERNAL = partial(
-    GitMaterial,
-    url='git@github.com:edx/mckinsey-internal',
-    polling=True,
-    destination_directory='mckinsey-internal'
-)
-
-EDX_ANSI_PRIVATE = partial(
+EDX_ANSIBLE_PRIVATE = partial(
     GitMaterial,
     url='git@github.com:edx-ops/ansible-private',
     polling=True,

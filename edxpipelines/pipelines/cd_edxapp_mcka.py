@@ -8,7 +8,8 @@ from os import path
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
 from edxpipelines.pipelines.script import pipeline_script
-from edxpipelines.patterns.apros import generate_deployment_service_pipelines
+from edxpipelines.patterns.pipelines import generate_single_deployment_service_pipelines
+from edxpipelines.materials import EDX_APROS
 
 
 def install_pipelines(configurator, config):
@@ -18,7 +19,13 @@ def install_pipelines(configurator, config):
     :param config:
     :return:
     """
-    generate_deployment_service_pipelines(configurator, config, 'apros')
+    generate_single_deployment_service_pipelines(
+        configurator,
+        config,
+        'apros',
+        EDX_APROS().url,
+        deployment='mckinsey'
+    )
 
 if __name__ == '__main__':
     pipeline_script(install_pipelines)

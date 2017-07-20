@@ -242,7 +242,7 @@ def install_pipelines(configurator, config):
             stage_md.name,
             constants.APPLY_MIGRATIONS_STAGE + "_" + sub_app,
             constants.APPLY_MIGRATIONS_JOB,
-            constants.MIGRATION_OUTPUT_DIR_NAME,
+            constants.MIGRATION_OUTPUT_DIR_NAME_WITH_APP(config['play_name']),
             is_dir=True
         )
     rollback_stage_db = edxapp.launch_and_terminate_subset_pipeline(
@@ -579,7 +579,7 @@ def install_pipelines(configurator, config):
             prod_edx_md.name,
             constants.APPLY_MIGRATIONS_STAGE + "_" + sub_app,
             constants.APPLY_MIGRATIONS_JOB,
-            constants.MIGRATION_OUTPUT_DIR_NAME,
+            constants.MIGRATION_OUTPUT_DIR_NAME_WITH_APP(config['play_name']),
             is_dir=True
         )
 
@@ -621,7 +621,7 @@ def install_pipelines(configurator, config):
             prod_edge_md.name,
             constants.APPLY_MIGRATIONS_STAGE + "_" + sub_app,
             constants.APPLY_MIGRATIONS_JOB,
-            constants.MIGRATION_OUTPUT_DIR_NAME,
+            constants.MIGRATION_OUTPUT_DIR_NAME_WITH_APP(config['play_name']),
             is_dir=True
         )
 
