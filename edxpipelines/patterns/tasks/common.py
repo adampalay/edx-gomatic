@@ -616,7 +616,6 @@ def generate_run_migrations(
     if not launch_artifacts_base_path:
         launch_artifacts_base_path = constants.ARTIFACT_PATH
 
-
     migration_artifact_path = path_to_artifact(constants.MIGRATION_OUTPUT_DIR_NAME_WITH_APP(application_name))
 
     job.ensure_encrypted_environment_variables(
