@@ -475,14 +475,14 @@ def generate_service_deployment_pipelines(
                     pipeline.name,
                     constants.DEPLOY_AMI_STAGE_NAME,
                     constants.DEPLOY_AMI_JOB_NAME_TPL(edp),
-                    constants.MIGRATION_OUTPUT_DIR_NAME_WITH_APP(edp.play),
+                    constants.MIGRATION_OUTPUT_DIR_NAME_WITH_APP(application_user if application_user else edp.play),
                     is_dir=True
                 )
 
                 jobs.generate_rollback_migrations(
                     deploy_stages.rollback_migrations,
                     edp,
-                    edp.play,
+                    application_user if application_user else edp.play,
                     edp.play,
                     '/edx/app/{}'.format(edp.play),
                     constants.DB_MIGRATION_USER,
