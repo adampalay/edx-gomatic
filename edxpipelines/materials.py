@@ -173,19 +173,23 @@ EDX_ANSIBLE_PRIVATE = partial(
     GitMaterial,
     url='git@github.com:edx-ops/ansible-private',
     polling=True,
-    destination_directory='ansible-private'
+    destination_directory='ansible-private',
+    ignore_patterns=constants.MATERIAL_IGNORE_ALL_REGEX,
 )
 
 MCKA_ANSIBLE_PRIVATE = partial(
     GitMaterial,
     url='git@github.com:mckinseyacademy/mcka-ansible.git',
     polling=True,
-    destination_directory='mcka-ansible'
+    destination_directory='mcka-ansible',
+    ignore_patterns=constants.MATERIAL_IGNORE_ALL_REGEX,
 )
 
 EDX_PLATFORM_SOLUTION = partial(
     GitMaterial,
     url='git@github.com:edx-solutions/edx-platform',
     polling=True,
-    destination_directory='edx-platform-solution'
+    destination_directory='edx-platform-solution',
+    ignore_patterns=constants.MATERIAL_IGNORE_ALL_REGEX,
+
 )
